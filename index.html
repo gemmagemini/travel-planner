@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>行程規劃</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js" crossorigin></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  window.addEventListener("DOMContentLoaded", function () {
+    var missing = [];
+    if (typeof React === "undefined") missing.push("React");
+    if (typeof ReactDOM === "undefined") missing.push("ReactDOM");
+    if (typeof Babel === "undefined") missing.push("Babel");
+    if (typeof supabase === "undefined") missing.push("Supabase");
+    if (missing.length) {
+      document.getElementById("root").innerHTML =
+        '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;font-family:sans-serif;text-align:center;padding:20px;">' +
+        '<div><p>有幾個必要的程式庫沒有載入成功：<b>' + missing.join("、") + '</b></p>' +
+        '<p style="color:#888;font-size:13px;">請確認網路連線正常，或改用 GitHub Pages 部署後開啟（部分瀏覽器對直接雙擊開啟的本機檔案限制較多）。</p></div></div>';
+    }
+  });
+</script>
+<style>
+  * { box-sizing: border-box; }
+  html, body, #root { height: 100%; margin: 0; }
+  body { font-family: 'IBM Plex Sans', sans-serif; }
+  .wrap { font-family: 'IBM Plex Sans', sans-serif; background: #D8DEC4; color: #33392A; padding: 20px; min-height: 100vh; }
+  .topbar { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 10px; flex-wrap: wrap; gap: 10px; }
+  .title { font-family: 'Fraunces', serif; font-size: 26px; font-weight: 600; letter-spacing: -0.01em; }
+  .title .sub { font-family: 'IBM Plex Sans', sans-serif; font-size: 12.5px; color: #807A54; font-weight: 400; display: block; margin-top: 2px; }
+  .title .sub button { border: none; background: none; color: #A9791F; text-decoration: underline; cursor: pointer; font-size: 12.5px; padding: 0; margin-left: 6px; }
+  .toggle { display: flex; border: 1px solid #C7C09E; border-radius: 8px; overflow: hidden; background: #F2F0E2; }
+  .toggle button { display: flex; align-items: center; gap: 6px; border: none; background: transparent; padding: 7px 12px; font-size: 12.5px; font-family: 'IBM Plex Sans', sans-serif; color: #5C5A40; cursor: pointer; }
+  .toggle button.active { background: #33392A; color: #D8DEC4; }
+
+  .section-tabs { display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap; }
+  .section-tab { display: flex; align-items: center; gap: 6px; border: 1px solid #C7C09E; background: #F2F0E2; color: #5C5A40; border-radius: 8px; padding: 7px 12px; font-size: 12.5px; cursor: pointer; }
+  .section-tab.active { background: #C1524A; border-color: #C1524A; color: #FBF3EF; }
+
+  .setup-panel { background: #F2F0E2; border: 1px solid #C7C09E; border-radius: 10px; padding: 12px 14px; margin-bottom: 16px; display: flex; align-items: flex-end; gap: 14px; flex-wrap: wrap; }
+  .setup-field { display: flex; flex-direction: column; gap: 4px; }
+  .setup-field label { font-size: 11px; color: #807A54; }
+  .setup-field input { border: 1px solid #C7C09E; border-radius: 6px; padding: 6px 8px; font-family: 'IBM Plex Sans', sans-serif; font-size: 12.5px; }
+  .setup-close { margin-left: auto; border: none; background: #33392A; color: #D8DEC4; border-radius: 6px; padding: 7px 12px; font-size: 12.5px; cursor: pointer; }
+
+  .desktop-grid { display: flex; align-items: flex-start; gap: 14px; overflow-x: auto; padding-bottom: 10px; }
+  .day-col { flex: 0 0 190px; background: #F2F0E2; border: 1px solid #C7C09E; border-radius: 10px; display: flex; flex-direction: column; }
+  .day-head { padding: 10px 12px 8px; border-bottom: 1.5px dashed #C7C09E; display: flex; align-items: baseline; gap: 8px; }
+  .day-head .md { font-family: 'Fraunces', serif; font-size: 19px; font-weight: 600; }
+  .day-head .wd { font-size: 11.5px; color: #807A54; }
+  .day-body { padding: 8px; display: flex; flex-direction: column; gap: 8px; }
+
+  .card { background: #fff; border: 1px solid #D8D2AC; border-radius: 8px; padding: 8px 9px 9px; cursor: grab; }
+  .card:active { cursor: grabbing; }
+  .card.editing { cursor: default; border-color: #C1524A; }
+  .card.auto { background: #F7F4E8; border-style: dashed; cursor: default; }
+  .card-kind-tag { display: flex; align-items: center; gap: 3px; font-size: 9.5px; background: #E4DEC0; color: #5C5A40; padding: 2px 6px; border-radius: 4px; }
+  .night-strip { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #5C5A40; padding-top: 6px; margin-top: 2px; border-top: 1px dashed #C7C09E; cursor: pointer; }
+  .night-strip:hover { color: #33392A; }
+  .card-top { display: flex; align-items: center; gap: 6px; margin-bottom: 3px; }
+  .grip { color: #A8A17E; }
+  .card-time { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #C1524A; background: #F3DAD6; padding: 1px 5px; border-radius: 4px; }
+  .icon-btn { border: none; background: transparent; color: #A8A17E; cursor: pointer; padding: 2px; display: flex; align-items: center; gap: 4px; border-radius: 4px; }
+  .icon-btn:hover { background: #E7E2C7; color: #33392A; }
+  .edit-btn { margin-left: auto; }
+  .edit-btn:hover { color: #E0A93A; }
+  .map-btn:hover { color: #C1524A; }
+  .del-btn:hover { color: #8B4A3A; }
+  .card-name { font-size: 13.5px; font-weight: 500; line-height: 1.35; }
+  .card-note { font-size: 11.5px; color: #807A54; margin-top: 2px; }
+
+  .edit-row { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+  .edit-time { width: 70px; border: 1px solid #C7C09E; border-radius: 5px; padding: 4px 6px; font-size: 11.5px; font-family: 'IBM Plex Mono', monospace; }
+  .save-btn { margin-left: auto; background: #C1524A; color: #fff; border-radius: 5px; padding: 4px 6px; }
+  .save-btn:hover { background: #9C3E38; color: #fff; }
+  .edit-name, .edit-note { width: 100%; border: 1px solid #D8D2AC; border-radius: 5px; padding: 6px 7px; font-size: 13px; font-family: 'IBM Plex Sans', sans-serif; margin-bottom: 5px; }
+
+  .add-row { display: flex; align-items: center; gap: 5px; border: 1px dashed #C7C09E; background: transparent; color: #807A54; font-size: 12px; padding: 7px; border-radius: 7px; cursor: pointer; justify-content: center; }
+  .add-row:hover { border-color: #E0A93A; color: #A9791F; }
+  .add-form input { width: 100%; border: 1px solid #E0A93A; border-radius: 7px; padding: 7px 8px; font-size: 12.5px; font-family: 'IBM Plex Sans', sans-serif; }
+
+  .mobile-wrap { max-width: 380px; margin: 0 auto; }
+  .day-tabs { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 12px; scrollbar-width: none; -ms-overflow-style: none; scroll-snap-type: x proximity; }
+  .day-tabs::-webkit-scrollbar { display: none; }
+  .day-tab { flex: 0 0 auto; border: 1px solid #C7C09E; background: #F2F0E2; border-radius: 8px; padding: 6px 10px; text-align: center; cursor: pointer; font-family: 'Fraunces', serif; scroll-snap-align: start; }
+  .day-tab.active { background: #33392A; border-color: #33392A; }
+  .day-tab .md { font-size: 14px; font-weight: 600; color: #33392A; }
+  .day-tab.active .md { color: #D8DEC4; }
+  .day-tab .wd { font-size: 9.5px; color: #807A54; font-family: 'IBM Plex Sans', sans-serif; }
+  .day-tab.active .wd { color: #DAD6B6; }
+
+  .mobile-list { display: flex; flex-direction: column; gap: 9px; }
+  .empty-note { font-size: 12px; color: #8F8964; padding: 8px 2px 12px; }
+
+  .logi-section { display: flex; flex-direction: column; gap: 14px; }
+  .logi-group-label { font-family: 'Fraunces', serif; font-size: 15px; font-weight: 600; color: #33392A; margin-bottom: 2px; }
+  .logi-list { display: flex; flex-direction: column; gap: 9px; }
+  .logi-card { display: flex; gap: 10px; background: #F2F0E2; border: 1px solid #D8D2AC; border-radius: 10px; padding: 10px 12px; align-items: flex-start; }
+  .logi-card.editing { flex-direction: column; align-items: stretch; border-color: #C1524A; }
+  .logi-icon { width: 30px; height: 30px; border-radius: 8px; background: #E4DEC0; display: flex; align-items: center; justify-content: center; color: #33392A; flex: none; }
+  .logi-main { flex: 1; min-width: 0; }
+  .logi-top-row { display: flex; align-items: center; gap: 8px; margin-bottom: 2px; }
+  .logi-date { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #C1524A; }
+  .logi-tag { font-size: 10.5px; background: #E7E2C7; color: #5C5A40; padding: 1px 6px; border-radius: 4px; }
+  .logi-title { font-size: 14px; font-weight: 600; }
+  .logi-sub { font-size: 12px; color: #807A54; margin-top: 1px; }
+  .logi-actions { display: flex; gap: 2px; flex: none; }
+  .logi-edit-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 6px; }
+  .logi-edit-grid input, .logi-note-input { border: 1px solid #D8D2AC; border-radius: 6px; padding: 6px 8px; font-size: 12.5px; font-family: 'IBM Plex Sans', sans-serif; margin-bottom: 6px; width: 100%; }
+  .logi-save { justify-content: center; background: #C1524A; color: #fff; padding: 7px; border-radius: 6px; }
+  .logi-save:hover { background: #9C3E38; color: #fff; }
+  .logi-add { display: flex; align-items: center; gap: 5px; border: 1px dashed #C7C09E; background: transparent; color: #807A54; font-size: 12.5px; padding: 8px; border-radius: 8px; cursor: pointer; justify-content: center; }
+  .logi-add:hover { border-color: #E0A93A; color: #A9791F; }
+
+  .shop-section { max-width: 420px; }
+  .shop-progress { font-size: 12px; color: #807A54; margin-bottom: 10px; }
+  .shop-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
+  .shop-row { display: flex; align-items: center; gap: 9px; background: #F2F0E2; border: 1px solid #D8D2AC; border-radius: 8px; padding: 8px 10px; }
+  .shop-check { width: 18px; height: 18px; border-radius: 5px; border: 1.5px solid #A8A17E; background: transparent; display: flex; align-items: center; justify-content: center; color: #fff; cursor: pointer; flex: none; }
+  .shop-check.checked { background: #C1524A; border-color: #C1524A; }
+  .shop-text { flex: 1; font-size: 13.5px; }
+  .shop-text.checked { text-decoration: line-through; color: #A8A17E; }
+
+  .loading-screen, .error-screen { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #D8DEC4; color: #33392A; font-family: 'IBM Plex Sans', sans-serif; text-align: center; padding: 20px; }
+  .error-screen pre { background: #F2F0E2; padding: 10px; border-radius: 8px; font-size: 11px; max-width: 500px; overflow: auto; text-align: left; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel" data-presets="react">
+const { useState, useEffect, useMemo } = React;
+
+/* ============ Supabase 設定 ============ */
+const SUPABASE_URL = "https://srcdjdomsdwzdcwmivtx.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_bdAnUH4j8-z6N__aux2pig_Fg0yq2kO";
+const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const WEEKDAY = ["日", "一", "二", "三", "四", "五", "六"];
+
+/* ============ 小工具 ============ */
+function toDateStr(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+function buildDays(startStr, endStr) {
+  const days = [];
+  const start = new Date(startStr + "T00:00:00");
+  const end = new Date(endStr + "T00:00:00");
+  if (isNaN(start) || isNaN(end) || start > end) return days;
+  const cur = new Date(start);
+  while (cur <= end) {
+    days.push({ key: toDateStr(cur), md: `${cur.getMonth() + 1}/${cur.getDate()}`, weekday: WEEKDAY[cur.getDay()] });
+    cur.setDate(cur.getDate() + 1);
+  }
+  return days;
+}
+function nightsBetween(checkinStr, checkoutStr) {
+  const nights = [];
+  const start = new Date(checkinStr + "T00:00:00");
+  const end = new Date(checkoutStr + "T00:00:00");
+  if (isNaN(start) || isNaN(end) || start >= end) return nights;
+  const cur = new Date(start);
+  while (cur < end) { nights.push(toDateStr(cur)); cur.setDate(cur.getDate() + 1); }
+  return nights;
+}
+function mapsUrl(name) { return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(name)}`; }
+function fmtMd(dateStr) {
+  if (!dateStr) return "";
+  const d = new Date(dateStr + "T00:00:00");
+  if (isNaN(d)) return dateStr;
+  return `${d.getMonth() + 1}/${d.getDate()}`;
+}
+
+/* ============ 圖示（簡化版，避免額外套件依賴） ============ */
+function Icon({ children, size = 16 }) {
+  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{children}</svg>;
+}
+const MapPin = (p) => <Icon {...p}><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" /><circle cx="12" cy="10" r="3" /></Icon>;
+const Pencil = (p) => <Icon {...p}><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" /></Icon>;
+const XIcon = (p) => <Icon {...p}><path d="M18 6 6 18" /><path d="M6 6l12 12" /></Icon>;
+const Check = (p) => <Icon {...p}><path d="M20 6 9 17l-5-5" /></Icon>;
+const Plus = (p) => <Icon {...p}><path d="M12 5v14" /><path d="M5 12h14" /></Icon>;
+const Monitor = (p) => <Icon {...p}><rect x="2" y="3" width="20" height="14" rx="2" /><path d="M8 21h8" /><path d="M12 17v4" /></Icon>;
+const Smartphone = (p) => <Icon {...p}><rect x="6" y="2" width="12" height="20" rx="2" /><path d="M11 18h2" /></Icon>;
+const Plane = (p) => <Icon {...p}><path d="M22 2 11 13" /><path d="M22 2 15 22l-4-9-9-4Z" /></Icon>;
+const Building2 = (p) => <Icon {...p}><rect x="4" y="2" width="16" height="20" rx="1" /><path d="M9 22v-4h6v4" /><path d="M8 6h1" /><path d="M15 6h1" /><path d="M8 10h1" /><path d="M15 10h1" /><path d="M8 14h1" /><path d="M15 14h1" /></Icon>;
+const ShoppingBag = (p) => <Icon {...p}><path d="M6 8h12l-1 13H7L6 8Z" /><path d="M9 8V6a3 3 0 0 1 6 0v2" /></Icon>;
+const ListChecks = (p) => <Icon {...p}><path d="M3 6l2 2 4-4" /><path d="M11 6h10" /><path d="M3 12l2 2 4-4" /><path d="M11 12h10" /><path d="M3 18l2 2 4-4" /><path d="M11 18h10" /></Icon>;
+const GripVertical = (p) => <Icon {...p}><circle cx="9" cy="6" r="1" /><circle cx="9" cy="12" r="1" /><circle cx="9" cy="18" r="1" /><circle cx="15" cy="6" r="1" /><circle cx="15" cy="12" r="1" /><circle cx="15" cy="18" r="1" /></Icon>;
+
+/* ============ DB <-> App 資料映射 ============ */
+const flightFromDb = (r) => ({ id: r.id, date: r.date, time: r.time || "", flightNo: r.flight_no || "", from: r.from_code || "", to: r.to_code || "", terminal: r.terminal || "", note: r.note || "" });
+const flightToDb = (d) => ({ date: d.date, time: d.time, flight_no: d.flightNo, from_code: d.from, to_code: d.to, terminal: d.terminal, note: d.note });
+const hotelFromDb = (r) => ({ id: r.id, name: r.name || "", address: r.address || "", checkin: r.checkin, checkinTime: r.checkin_time || "", checkout: r.checkout, checkoutTime: r.checkout_time || "", confirmation: r.confirmation || "" });
+const hotelToDb = (d) => ({ name: d.name, address: d.address, checkin: d.checkin, checkin_time: d.checkinTime, checkout: d.checkout, checkout_time: d.checkoutTime, confirmation: d.confirmation });
+const itemFromDb = (r) => ({ id: r.id, day: r.day, time: r.time || "", name: r.name, note: r.note || "" });
+
+/* ============ 行程卡片 ============ */
+function ItemCard({ item, draggable, onDragStart, onDragEnd, onMapClick, onDelete, isEditing, onEditStart, onEditSave }) {
+  const [draft, setDraft] = useState({ time: item.time, name: item.name, note: item.note });
+  if (isEditing) {
+    return (
+      <div className="card editing">
+        <div className="edit-row">
+          <input className="edit-time" value={draft.time} onChange={(e) => setDraft({ ...draft, time: e.target.value })} placeholder="時間" />
+          <button className="icon-btn save-btn" onClick={() => onEditSave(item.id, draft)}><Check size={14} /></button>
+        </div>
+        <input className="edit-name" value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} placeholder="地點名稱" autoFocus />
+        <input className="edit-note" value={draft.note} onChange={(e) => setDraft({ ...draft, note: e.target.value })} placeholder="備註" />
+      </div>
+    );
+  }
+  return (
+    <div className="card" draggable={draggable} onDragStart={draggable ? (e) => onDragStart(e, item.id) : undefined} onDragEnd={draggable ? onDragEnd : undefined}>
+      <div className="card-top">
+        {draggable && <GripVertical size={14} className="grip" />}
+        {item.time && <span className="card-time">{item.time}</span>}
+        <button className="icon-btn edit-btn" title="編輯" onClick={() => onEditStart(item.id)}><Pencil size={12} /></button>
+        <button className="icon-btn map-btn" title="在 Google Maps 開啟" onClick={() => onMapClick(item.name)}><MapPin size={13} /></button>
+        <button className="icon-btn del-btn" title="刪除" onClick={() => onDelete(item.id)}><XIcon size={13} /></button>
+      </div>
+      <div className="card-name">{item.name}</div>
+      {item.note && <div className="card-note">{item.note}</div>}
+    </div>
+  );
+}
+
+function AutoItemCard({ item, onMapClick, onDelete }) {
+  const IconC = item.kind === "flight" ? Plane : Building2;
+  return (
+    <div className="card auto">
+      <div className="card-top">
+        <span className="card-kind-tag"><IconC size={10} /> {item.tagLabel}</span>
+        {item.time && <span className="card-time">{item.time}</span>}
+        {item.mapQuery && <button className="icon-btn map-btn" title="在 Google Maps 開啟" onClick={() => onMapClick(item.mapQuery)}><MapPin size={13} /></button>}
+        <button className="icon-btn del-btn" title="刪除（會一併從航班・飯店移除）" onClick={item.onDelete}><XIcon size={13} /></button>
+      </div>
+      <div className="card-name">{item.name}</div>
+      {item.note && <div className="card-note">{item.note}</div>}
+    </div>
+  );
+}
+
+function NightlyHotelStrip({ hotel, onMapClick }) {
+  return (
+    <div className="night-strip" onClick={() => onMapClick(hotel.address || hotel.name)}>
+      <Building2 size={11} /><span>今晚住宿：{hotel.name || "（未命名飯店）"}</span>
+    </div>
+  );
+}
+
+function AddInline({ onAdd, placeholder }) {
+  const [open, setOpen] = useState(false);
+  const [val, setVal] = useState("");
+  if (!open) return <button className="add-row" onClick={() => setOpen(true)}><Plus size={13} /> {placeholder || "新增項目"}</button>;
+  return (
+    <form className="add-form" onSubmit={(e) => { e.preventDefault(); if (val.trim()) onAdd(val.trim()); setVal(""); setOpen(false); }}>
+      <input autoFocus value={val} onChange={(e) => setVal(e.target.value)} placeholder="輸入內容" onBlur={() => { if (!val.trim()) setOpen(false); }} />
+    </form>
+  );
+}
+
+/* ============ 航班／飯店卡片 ============ */
+function FlightCard({ flight, isEditing, onEditStart, onEditSave, onDelete }) {
+  const [draft, setDraft] = useState(flight);
+  if (isEditing) {
+    return (
+      <div className="logi-card editing">
+        <div className="logi-edit-grid">
+          <input value={draft.date} onChange={(e) => setDraft({ ...draft, date: e.target.value })} placeholder="日期 YYYY-MM-DD" />
+          <input value={draft.time} onChange={(e) => setDraft({ ...draft, time: e.target.value })} placeholder="時間" />
+          <input value={draft.flightNo} onChange={(e) => setDraft({ ...draft, flightNo: e.target.value })} placeholder="航班號" />
+          <input value={draft.terminal} onChange={(e) => setDraft({ ...draft, terminal: e.target.value })} placeholder="航廈" />
+          <input value={draft.from} onChange={(e) => setDraft({ ...draft, from: e.target.value })} placeholder="出發地" />
+          <input value={draft.to} onChange={(e) => setDraft({ ...draft, to: e.target.value })} placeholder="目的地" />
+        </div>
+        <input className="logi-note-input" value={draft.note} onChange={(e) => setDraft({ ...draft, note: e.target.value })} placeholder="備註（去程／回程）" />
+        <button className="icon-btn save-btn logi-save" onClick={() => onEditSave(flight.id, draft)}><Check size={14} /> 儲存</button>
+      </div>
+    );
+  }
+  return (
+    <div className="logi-card">
+      <div className="logi-icon"><Plane size={16} /></div>
+      <div className="logi-main">
+        <div className="logi-top-row"><span className="logi-date">{fmtMd(flight.date)}</span>{flight.note && <span className="logi-tag">{flight.note}</span>}</div>
+        <div className="logi-title">{flight.from} → {flight.to}</div>
+        <div className="logi-sub">{flight.flightNo} · {flight.time}{flight.terminal ? ` · 航廈 ${flight.terminal}` : ""}</div>
+      </div>
+      <div className="logi-actions">
+        <button className="icon-btn edit-btn" onClick={() => onEditStart(flight.id)}><Pencil size={12} /></button>
+        <button className="icon-btn del-btn" onClick={() => onDelete(flight.id)}><XIcon size={13} /></button>
+      </div>
+    </div>
+  );
+}
+
+function HotelCard({ hotel, isEditing, onEditStart, onEditSave, onDelete, onMapClick }) {
+  const [draft, setDraft] = useState(hotel);
+  if (isEditing) {
+    return (
+      <div className="logi-card editing">
+        <input className="logi-note-input" value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} placeholder="飯店名稱" autoFocus />
+        <input className="logi-note-input" value={draft.address} onChange={(e) => setDraft({ ...draft, address: e.target.value })} placeholder="地址" />
+        <div className="logi-edit-grid">
+          <input value={draft.checkin} onChange={(e) => setDraft({ ...draft, checkin: e.target.value })} placeholder="入住 YYYY-MM-DD" />
+          <input value={draft.checkinTime} onChange={(e) => setDraft({ ...draft, checkinTime: e.target.value })} placeholder="入住時間 15:00" />
+          <input value={draft.checkout} onChange={(e) => setDraft({ ...draft, checkout: e.target.value })} placeholder="退房 YYYY-MM-DD" />
+          <input value={draft.checkoutTime} onChange={(e) => setDraft({ ...draft, checkoutTime: e.target.value })} placeholder="退房時間 11:00" />
+        </div>
+        <input className="logi-note-input" value={draft.confirmation} onChange={(e) => setDraft({ ...draft, confirmation: e.target.value })} placeholder="訂房確認碼（選填）" />
+        <button className="icon-btn save-btn logi-save" onClick={() => onEditSave(hotel.id, draft)}><Check size={14} /> 儲存</button>
+      </div>
+    );
+  }
+  return (
+    <div className="logi-card">
+      <div className="logi-icon"><Building2 size={16} /></div>
+      <div className="logi-main">
+        <div className="logi-top-row"><span className="logi-date">{fmtMd(hotel.checkin)} {hotel.checkinTime} – {fmtMd(hotel.checkout)} {hotel.checkoutTime}</span></div>
+        <div className="logi-title">{hotel.name}</div>
+        <div className="logi-sub">{hotel.address}</div>
+      </div>
+      <div className="logi-actions">
+        <button className="icon-btn map-btn" title="在 Google Maps 開啟" onClick={() => onMapClick(hotel.address || hotel.name)}><MapPin size={13} /></button>
+        <button className="icon-btn edit-btn" onClick={() => onEditStart(hotel.id)}><Pencil size={12} /></button>
+        <button className="icon-btn del-btn" onClick={() => onDelete(hotel.id)}><XIcon size={13} /></button>
+      </div>
+    </div>
+  );
+}
+
+function ShoppingRow({ item, onToggle, onDelete }) {
+  return (
+    <div className="shop-row">
+      <button className={`shop-check ${item.checked ? "checked" : ""}`} onClick={() => onToggle(item.id)}>{item.checked && <Check size={12} />}</button>
+      <span className={`shop-text ${item.checked ? "checked" : ""}`}>{item.text}</span>
+      <button className="icon-btn del-btn" onClick={() => onDelete(item.id)}><XIcon size={13} /></button>
+    </div>
+  );
+}
+
+/* ============ 主程式 ============ */
+function App() {
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(null);
+  const [tripId, setTripId] = useState(null);
+  const [tripStart, setTripStart] = useState("2026-09-16");
+  const [tripEnd, setTripEnd] = useState("2026-09-24");
+  const [items, setItems] = useState([]);
+  const [flights, setFlights] = useState([]);
+  const [hotels, setHotels] = useState([]);
+  const [shopping, setShopping] = useState([]);
+
+  const [showSetup, setShowSetup] = useState(false);
+  const [section, setSection] = useState("itinerary");
+  const [viewMode, setViewMode] = useState(window.innerWidth < 640 ? "mobile" : "desktop");
+  const [activeDayIdx, setActiveDayIdx] = useState(0);
+  const [editingId, setEditingId] = useState(null);
+  const [dragItemId, setDragItemId] = useState(null);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        let { data: trips, error: tripErr } = await db.from("trips").select("*").order("created_at").limit(1);
+        if (tripErr) throw tripErr;
+        let trip;
+        if (!trips || trips.length === 0) {
+          const { data: created, error: createErr } = await db.from("trips").insert({ name: "我的旅程", start_date: tripStart, end_date: tripEnd }).select().single();
+          if (createErr) throw createErr;
+          trip = created;
+        } else {
+          trip = trips[0];
+        }
+        setTripId(trip.id);
+        setTripStart(trip.start_date);
+        setTripEnd(trip.end_date);
+
+        const [itemsRes, flightsRes, hotelsRes, shopRes] = await Promise.all([
+          db.from("itinerary_items").select("*").eq("trip_id", trip.id),
+          db.from("flights").select("*").eq("trip_id", trip.id),
+          db.from("hotels").select("*").eq("trip_id", trip.id),
+          db.from("shopping_items").select("*").eq("trip_id", trip.id),
+        ]);
+        if (itemsRes.error) throw itemsRes.error;
+        if (flightsRes.error) throw flightsRes.error;
+        if (hotelsRes.error) throw hotelsRes.error;
+        if (shopRes.error) throw shopRes.error;
+
+        setItems(itemsRes.data.map(itemFromDb));
+        setFlights(flightsRes.data.map(flightFromDb));
+        setHotels(hotelsRes.data.map(hotelFromDb));
+        setShopping(shopRes.data);
+        setLoading(false);
+      } catch (e) {
+        setLoadError(e);
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  const days = useMemo(() => buildDays(tripStart, tripEnd), [tripStart, tripEnd]);
+  const itemsForDay = (dayKey) => items.filter((it) => it.day === dayKey);
+
+  const autoItemsForDay = (dayKey) => {
+    const timed = [];
+    const nightly = [];
+    flights.forEach((f) => {
+      if (f.date === dayKey) {
+        timed.push({ id: `auto-fl-${f.id}`, kind: "flight", tagLabel: f.note || "航班", time: f.time || "", name: `${f.from || "?"} → ${f.to || "?"}${f.flightNo ? `（${f.flightNo}）` : ""}`, note: f.terminal ? `航廈 ${f.terminal}` : "", mapQuery: null, onDelete: () => handleFlightDelete(f.id) });
+      }
+    });
+    hotels.forEach((h) => {
+      if (h.checkin === dayKey) timed.push({ id: `auto-ht-in-${h.id}`, kind: "hotel", tagLabel: "入住", time: h.checkinTime || "", name: h.name || "（未命名飯店）", note: h.address, mapQuery: h.address || h.name, onDelete: () => handleHotelDelete(h.id) });
+      if (h.checkout === dayKey) timed.push({ id: `auto-ht-out-${h.id}`, kind: "hotel", tagLabel: "退房", time: h.checkoutTime || "", name: h.name || "（未命名飯店）", note: h.address, mapQuery: h.address || h.name, onDelete: () => handleHotelDelete(h.id) });
+      if (nightsBetween(h.checkin, h.checkout).includes(dayKey)) nightly.push(h);
+    });
+    return { timed, nightly };
+  };
+
+  const getDayCards = (dayKey) => {
+    const { timed: autoTimed, nightly } = autoItemsForDay(dayKey);
+    const manual = itemsForDay(dayKey).map((it) => ({ ...it, __manual: true }));
+    const combined = [...autoTimed, ...manual];
+    combined.sort((a, b) => (a.time || "99:99").localeCompare(b.time || "99:99"));
+    return { timed: combined, nightly };
+  };
+
+  const handleMapClick = (name) => window.open(mapsUrl(name), "_blank");
+
+  /* ---- 行程項目 CRUD ---- */
+  const handleDragStart = (e, id) => { setDragItemId(id); e.dataTransfer.effectAllowed = "move"; };
+  const handleDragEnd = () => setDragItemId(null);
+  const handleDropOnDay = async (e, dayKey) => {
+    e.preventDefault();
+    const id = dragItemId;
+    if (!id) return;
+    setItems((prev) => prev.map((it) => (it.id === id ? { ...it, day: dayKey } : it)));
+    await db.from("itinerary_items").update({ day: dayKey }).eq("id", id);
+  };
+  const handleAdd = async (dayKey, name) => {
+    const { data, error } = await db.from("itinerary_items").insert({ trip_id: tripId, day: dayKey, time: "", name, note: "" }).select().single();
+    if (!error) setItems((prev) => [...prev, itemFromDb(data)]);
+  };
+  const handleDelete = async (id) => {
+    setItems((prev) => prev.filter((it) => it.id !== id));
+    await db.from("itinerary_items").delete().eq("id", id);
+  };
+  const handleEditSave = async (id, draft) => {
+    setItems((prev) => prev.map((it) => (it.id === id ? { ...it, ...draft } : it)));
+    setEditingId(null);
+    await db.from("itinerary_items").update({ time: draft.time, name: draft.name, note: draft.note }).eq("id", id);
+  };
+
+  /* ---- 航班 CRUD ---- */
+  const handleAddFlight = async () => {
+    const { data, error } = await db.from("flights").insert({ trip_id: tripId, date: tripStart, time: "", flight_no: "", from_code: "", to_code: "", terminal: "", note: "" }).select().single();
+    if (!error) setFlights((prev) => [...prev, flightFromDb(data)]);
+  };
+  const handleFlightSave = async (id, draft) => {
+    setFlights((prev) => prev.map((f) => (f.id === id ? draft : f)));
+    setEditingId(null);
+    await db.from("flights").update(flightToDb(draft)).eq("id", id);
+  };
+  const handleFlightDelete = async (id) => {
+    setFlights((prev) => prev.filter((f) => f.id !== id));
+    await db.from("flights").delete().eq("id", id);
+  };
+
+  /* ---- 飯店 CRUD ---- */
+  const handleAddHotel = async () => {
+    const { data, error } = await db.from("hotels").insert({ trip_id: tripId, name: "", address: "", checkin: tripStart, checkin_time: "15:00", checkout: tripEnd, checkout_time: "11:00", confirmation: "" }).select().single();
+    if (!error) setHotels((prev) => [...prev, hotelFromDb(data)]);
+  };
+  const handleHotelSave = async (id, draft) => {
+    setHotels((prev) => prev.map((h) => (h.id === id ? draft : h)));
+    setEditingId(null);
+    await db.from("hotels").update(hotelToDb(draft)).eq("id", id);
+  };
+  const handleHotelDelete = async (id) => {
+    setHotels((prev) => prev.filter((h) => h.id !== id));
+    await db.from("hotels").delete().eq("id", id);
+  };
+
+  /* ---- 購物清單 CRUD ---- */
+  const handleAddShopping = async (text) => {
+    const { data, error } = await db.from("shopping_items").insert({ trip_id: tripId, text, checked: false }).select().single();
+    if (!error) setShopping((prev) => [...prev, data]);
+  };
+  const handleToggleShopping = async (id) => {
+    const target = shopping.find((s) => s.id === id);
+    if (!target) return;
+    const next = !target.checked;
+    setShopping((prev) => prev.map((s) => (s.id === id ? { ...s, checked: next } : s)));
+    await db.from("shopping_items").update({ checked: next }).eq("id", id);
+  };
+  const handleDeleteShopping = async (id) => {
+    setShopping((prev) => prev.filter((s) => s.id !== id));
+    await db.from("shopping_items").delete().eq("id", id);
+  };
+
+  /* ---- 旅程日期 ---- */
+  const handleTripStartChange = async (val) => {
+    setTripStart(val);
+    if (tripId) await db.from("trips").update({ start_date: val }).eq("id", tripId);
+  };
+  const handleTripEndChange = async (val) => {
+    setTripEnd(val);
+    if (tripId) await db.from("trips").update({ end_date: val }).eq("id", tripId);
+  };
+
+  if (loading) return <div className="loading-screen">讀取中…</div>;
+  if (loadError) {
+    return (
+      <div className="error-screen">
+        <div>
+          <p>連線失敗，請確認 Supabase 網址／金鑰是否正確，或資料表是否已建立。</p>
+          <pre>{String(loadError.message || loadError)}</pre>
+        </div>
+      </div>
+    );
+  }
+
+  const activeDay = days[Math.min(activeDayIdx, Math.max(days.length - 1, 0))];
+  const isMobile = viewMode === "mobile";
+  const shoppingDone = shopping.filter((s) => s.checked).length;
+
+  return (
+    <div className="wrap">
+      <div className="topbar">
+        <div className="title">
+          行程規劃
+          <span className="sub">
+            {tripStart.slice(5).replace("-", "/")}–{tripEnd.slice(5).replace("-", "/")}
+            <button onClick={() => setShowSetup((s) => !s)}>編輯天數</button>
+          </span>
+        </div>
+        <div className="toggle">
+          <button className={!isMobile ? "active" : ""} onClick={() => setViewMode("desktop")}><Monitor size={13} /> 電腦版</button>
+          <button className={isMobile ? "active" : ""} onClick={() => setViewMode("mobile")}><Smartphone size={13} /> 手機版</button>
+        </div>
+      </div>
+
+      <div className="section-tabs">
+        <button className={`section-tab ${section === "itinerary" ? "active" : ""}`} onClick={() => setSection("itinerary")}><ListChecks size={13} /> 行程</button>
+        <button className={`section-tab ${section === "logistics" ? "active" : ""}`} onClick={() => setSection("logistics")}><Plane size={13} /> 航班・飯店</button>
+        <button className={`section-tab ${section === "shopping" ? "active" : ""}`} onClick={() => setSection("shopping")}><ShoppingBag size={13} /> 購物清單</button>
+      </div>
+
+      {showSetup && section === "itinerary" && (
+        <div className="setup-panel">
+          <div className="setup-field"><label>出發日期</label><input type="date" value={tripStart} onChange={(e) => handleTripStartChange(e.target.value)} /></div>
+          <div className="setup-field"><label>回程日期</label><input type="date" value={tripEnd} onChange={(e) => handleTripEndChange(e.target.value)} /></div>
+          <button className="setup-close" onClick={() => setShowSetup(false)}>完成</button>
+        </div>
+      )}
+
+      {section === "itinerary" && (
+        !isMobile ? (
+          <div className="desktop-grid">
+            {days.map((d) => (
+              <div key={d.key} className="day-col" onDragOver={(e) => e.preventDefault()} onDrop={(e) => handleDropOnDay(e, d.key)}>
+                <div className="day-head"><span className="md">{d.md}</span><span className="wd">週{d.weekday}</span></div>
+                <div className="day-body">
+                  {getDayCards(d.key).timed.map((it) =>
+                    it.__manual ? (
+                      <div key={it.id} onDragOver={(e) => e.preventDefault()} onDrop={(e) => handleDropOnDay(e, d.key)}>
+                        <ItemCard item={it} draggable={editingId !== it.id} onDragStart={handleDragStart} onDragEnd={handleDragEnd} onMapClick={handleMapClick} onDelete={handleDelete} isEditing={editingId === it.id} onEditStart={setEditingId} onEditSave={handleEditSave} />
+                      </div>
+                    ) : (
+                      <AutoItemCard key={it.id} item={it} onMapClick={handleMapClick} />
+                    )
+                  )}
+                  <AddInline onAdd={(name) => handleAdd(d.key, name)} />
+                  {getDayCards(d.key).nightly.map((h) => <NightlyHotelStrip key={`night-${h.id}-${d.key}`} hotel={h} onMapClick={handleMapClick} />)}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="mobile-wrap">
+            <div className="day-tabs">
+              {days.map((d, i) => (
+                <div key={d.key} className={`day-tab ${i === activeDayIdx ? "active" : ""}`} onClick={() => setActiveDayIdx(i)}>
+                  <div className="md">{d.md}</div><div className="wd">週{d.weekday}</div>
+                </div>
+              ))}
+            </div>
+            <div className="mobile-list">
+              {activeDay && getDayCards(activeDay.key).timed.length === 0 && getDayCards(activeDay.key).nightly.length === 0 && <div className="empty-note">這天還沒有安排行程</div>}
+              {activeDay && getDayCards(activeDay.key).timed.map((it) =>
+                it.__manual ? (
+                  <ItemCard key={it.id} item={it} onMapClick={handleMapClick} onDelete={handleDelete} isEditing={editingId === it.id} onEditStart={setEditingId} onEditSave={handleEditSave} />
+                ) : (
+                  <AutoItemCard key={it.id} item={it} onMapClick={handleMapClick} />
+                )
+              )}
+              {activeDay && <AddInline onAdd={(name) => handleAdd(activeDay.key, name)} />}
+              {activeDay && getDayCards(activeDay.key).nightly.map((h) => <NightlyHotelStrip key={`night-${h.id}-${activeDay.key}`} hotel={h} onMapClick={handleMapClick} />)}
+            </div>
+          </div>
+        )
+      )}
+
+      {section === "logistics" && (
+        <div className={isMobile ? "mobile-wrap" : ""}>
+          <div className="logi-section">
+            <div>
+              <div className="logi-group-label">航班</div>
+              <div className="logi-list">
+                {flights.map((f) => <FlightCard key={f.id} flight={f} isEditing={editingId === f.id} onEditStart={setEditingId} onEditSave={handleFlightSave} onDelete={handleFlightDelete} />)}
+                <button className="logi-add" onClick={handleAddFlight}><Plus size={13} /> 新增航班</button>
+              </div>
+            </div>
+            <div>
+              <div className="logi-group-label">飯店</div>
+              <div className="logi-list">
+                {hotels.map((h) => <HotelCard key={h.id} hotel={h} isEditing={editingId === h.id} onEditStart={setEditingId} onEditSave={handleHotelSave} onDelete={handleHotelDelete} onMapClick={handleMapClick} />)}
+                <button className="logi-add" onClick={handleAddHotel}><Plus size={13} /> 新增飯店</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {section === "shopping" && (
+        <div className={isMobile ? "mobile-wrap" : "shop-section"}>
+          <div className="shop-progress">已完成 {shoppingDone} / {shopping.length}</div>
+          <div className="shop-list">{shopping.map((s) => <ShoppingRow key={s.id} item={s} onToggle={handleToggleShopping} onDelete={handleDeleteShopping} />)}</div>
+          <AddInline onAdd={handleAddShopping} placeholder="新增購物項目" />
+        </div>
+      )}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>

@@ -126,6 +126,11 @@
   .shop-text { flex: 1; font-size: 13.5px; }
   .shop-text.checked { text-decoration: line-through; color: #A8A17E; }
 
+  .inbox-shelf { background: #F2F0E2; border: 1px dashed #C7C09E; border-radius: 10px; padding: 10px 12px; margin-bottom: 14px; }
+  .inbox-label { font-family: 'Fraunces', serif; font-size: 13.5px; font-weight: 600; color: #33392A; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+  .inbox-row { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; }
+  .inbox-row .card { flex: 0 0 170px; }
+  .inbox-empty { font-size: 11.5px; color: #8F8964; padding: 4px 2px; }
   .loading-screen, .error-screen { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #D8DEC4; color: #33392A; font-family: 'IBM Plex Sans', sans-serif; text-align: center; padding: 20px; }
   .error-screen pre { background: #F2F0E2; padding: 10px; border-radius: 8px; font-size: 11px; max-width: 500px; overflow: auto; text-align: left; }
 </style>
@@ -409,6 +414,7 @@ function App() {
 
   const days = useMemo(() => buildDays(tripStart, tripEnd), [tripStart, tripEnd]);
   const itemsForDay = (dayKey) => items.filter((it) => it.day === dayKey);
+  const inboxItems = items.filter((it) => !it.day);
 
   const autoItemsForDay = (dayKey) => {
     const timed = [];
@@ -448,6 +454,10 @@ function App() {
   };
   const handleAdd = async (dayKey, name) => {
     const { data, error } = await db.from("itinerary_items").insert({ trip_id: tripId, day: dayKey, time: "", name, note: "" }).select().single();
+    if (!error) setItems((prev) => [...prev, itemFromDb(data)]);
+  };
+  const handleAddInbox = async (name) => {
+    const { data, error } = await db.from("itinerary_items").insert({ trip_id: tripId, day: null, time: "", name, note: "" }).select().single();
     if (!error) setItems((prev) => [...prev, itemFromDb(data)]);
   };
   const handleDelete = async (id) => {
@@ -560,6 +570,39 @@ function App() {
           <div className="setup-field"><label>出發日期</label><input type="date" value={tripStart} onChange={(e) => handleTripStartChange(e.target.value)} /></div>
           <div className="setup-field"><label>回程日期</label><input type="date" value={tripEnd} onChange={(e) => handleTripEndChange(e.target.value)} /></div>
           <button className="setup-close" onClick={() => setShowSetup(false)}>完成</button>
+        </div>
+      )}
+
+      {section === "itinerary" && (
+        <div
+          className="inbox-shelf"
+          onDragOver={(e) => e.preventDefault()}
+          onDrop={(e) => handleDropOnDay(e, null)}
+        >
+          <div className="inbox-label"><ListChecks size={13} /> 待排清單（還沒排定日期）</div>
+          {inboxItems.length === 0 ? (
+            <div className="inbox-empty">拖一張卡片到這裡，或用下面的新增功能加入還沒決定哪天去的地點</div>
+          ) : (
+            <div className="inbox-row">
+              {inboxItems.map((it) => (
+                <ItemCard
+                  key={it.id}
+                  item={it}
+                  draggable={editingId !== it.id}
+                  onDragStart={handleDragStart}
+                  onDragEnd={handleDragEnd}
+                  onMapClick={handleMapClick}
+                  onDelete={handleDelete}
+                  isEditing={editingId === it.id}
+                  onEditStart={setEditingId}
+                  onEditSave={handleEditSave}
+                />
+              ))}
+            </div>
+          )}
+          <div style={{ marginTop: 8 }}>
+            <AddInline onAdd={handleAddInbox} placeholder="新增到待排清單" />
+          </div>
         </div>
       )}
 

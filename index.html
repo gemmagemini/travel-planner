@@ -9,7 +9,6 @@
 <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
 <script src="https://unpkg.com/@babel/standalone/babel.min.js" crossorigin></script>
-<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDnxTGzpS7umt2GJ2-WAX-qbqQEsKWFy_8"></script>
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -19,7 +18,6 @@
     if (typeof ReactDOM === "undefined") missing.push("ReactDOM");
     if (typeof Babel === "undefined") missing.push("Babel");
     if (typeof Sortable === "undefined") missing.push("Sortable");
-    if (typeof google === "undefined" || !google.maps) missing.push("Google Maps");
     if (typeof supabase === "undefined") missing.push("Supabase");
     if (missing.length) {
       document.getElementById("root").innerHTML =
@@ -132,8 +130,6 @@
   .shop-text.checked { text-decoration: line-through; color: #A8A17E; }
 
   .inbox-shelf { background: #F2F0E2; border: 1px dashed #C7C09E; border-radius: 10px; padding: 10px 12px; margin-bottom: 14px; }
-  .day-map-panel { background: #F2F0E2; border: 1px solid #C7C09E; border-radius: 10px; padding: 10px 12px; margin-bottom: 14px; }
-  .day-map-canvas { width: 100%; height: 260px; border-radius: 10px; margin-top: 8px; background: #D8DEC4; }
   .inbox-label { font-family: 'Fraunces', serif; font-size: 13.5px; font-weight: 600; color: #33392A; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
   .inbox-row { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; -ms-overflow-style: none; }
   .inbox-row::-webkit-scrollbar { display: none; }
@@ -154,7 +150,6 @@ const { useState, useEffect, useMemo, useRef } = React;
 /* ============ Supabase 設定 ============ */
 const SUPABASE_URL = "https://srcdjdomsdwzdcwmivtx.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_bdAnUH4j8-z6N__aux2pig_Fg0yq2kO";
-const EDGE_FUNCTION_URL = "https://srcdjdomsdwzdcwmivtx.supabase.co/functions/v1/smooth-endpoint";
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const WEEKDAY = ["日", "一", "二", "三", "四", "五", "六"];
@@ -217,7 +212,7 @@ const flightFromDb = (r) => ({ id: r.id, date: r.date, time: r.time || "", fligh
 const flightToDb = (d) => ({ date: d.date, time: d.time, flight_no: d.flightNo, from_code: d.from, to_code: d.to, terminal: d.terminal, note: d.note });
 const hotelFromDb = (r) => ({ id: r.id, name: r.name || "", address: r.address || "", checkin: r.checkin, checkinTime: r.checkin_time || "", checkout: r.checkout, checkoutTime: r.checkout_time || "", confirmation: r.confirmation || "" });
 const hotelToDb = (d) => ({ name: d.name, address: d.address, checkin: d.checkin, checkin_time: d.checkinTime, checkout: d.checkout, checkout_time: d.checkoutTime, confirmation: d.confirmation });
-const itemFromDb = (r) => ({ id: r.id, day: r.day, time: r.time || "", name: r.name, note: r.note || "", sortOrder: r.sort_order ?? 0, lat: r.lat ?? null, lng: r.lng ?? null });
+const itemFromDb = (r) => ({ id: r.id, day: r.day, time: r.time || "", name: r.name, note: r.note || "", sortOrder: r.sort_order ?? 0 });
 
 /* ============ 行程卡片 ============ */
 function ItemCard({ item, draggable, onDragStart, onDragEnd, onMapClick, onDelete, isEditing, onEditStart, onEditSave }) {
@@ -385,9 +380,6 @@ function App() {
   const [dragItemId, setDragItemId] = useState(null);
   const inboxListRef = useRef(null);
   const dayListRef = useRef(null);
-  const mapDivRef = useRef(null);
-  const mapObjRef = useRef(null);
-  const [mapDayIdx, setMapDayIdx] = useState(0);
 
   useEffect(() => {
     if (!isMobileForDrag()) return;
@@ -464,54 +456,6 @@ function App() {
   }, []);
 
   const days = useMemo(() => buildDays(tripStart, tripEnd), [tripStart, tripEnd]);
-
-  useEffect(() => {
-    if (section !== "itinerary") return;
-    if (typeof google === "undefined" || !google.maps || !mapDivRef.current) return;
-    const day = days[mapDayIdx];
-    if (!day) return;
-    const points = manualListFor(day.key).filter((it) => it.lat != null && it.lng != null);
-
-    if (!mapObjRef.current) {
-      mapObjRef.current = new google.maps.Map(mapDivRef.current, {
-        center: points[0] ? { lat: points[0].lat, lng: points[0].lng } : { lat: 35.681236, lng: 139.767125 },
-        zoom: 13,
-        disableDefaultUI: true,
-        zoomControl: true,
-      });
-    }
-    const map = mapObjRef.current;
-
-    if (map.__markers) map.__markers.forEach((m) => m.setMap(null));
-    if (map.__line) map.__line.setMap(null);
-
-    const markers = points.map(
-      (p, i) =>
-        new google.maps.Marker({
-          position: { lat: p.lat, lng: p.lng },
-          map,
-          label: { text: String(i + 1), color: "#fff", fontSize: "11px" },
-          icon: { path: google.maps.SymbolPath.CIRCLE, scale: 11, fillColor: "#C1524A", fillOpacity: 1, strokeWeight: 0 },
-        })
-    );
-    map.__markers = markers;
-
-    if (points.length > 1) {
-      map.__line = new google.maps.Polyline({
-        path: points.map((p) => ({ lat: p.lat, lng: p.lng })),
-        map,
-        strokeColor: "#C1524A",
-        strokeOpacity: 0.9,
-        strokeWeight: 3,
-      });
-    }
-
-    if (points.length > 0) {
-      const bounds = new google.maps.LatLngBounds();
-      points.forEach((p) => bounds.extend({ lat: p.lat, lng: p.lng }));
-      map.fitBounds(bounds, 40);
-    }
-  }, [mapDayIdx, items, section, days]);
 
   const itemsForDay = (dayKey) => items.filter((it) => it.day === dayKey);
   const inboxItems = items.filter((it) => !it.day).sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
@@ -661,28 +605,6 @@ function App() {
     if (tripId) await db.from("trips").update({ end_date: val }).eq("id", tripId);
   };
 
-  const [backfillStatus, setBackfillStatus] = useState("");
-  const handleBackfillLocations = async () => {
-    setBackfillStatus("補座標中…");
-    try {
-      const res = await fetch(EDGE_FUNCTION_URL, {
-        method: "POST",
-        headers: { apikey: SUPABASE_ANON_KEY, "Content-Type": "application/json" },
-        body: JSON.stringify({ trip_id: tripId, backfill: true }),
-      });
-      const data = await res.json();
-      if (data.error) {
-        setBackfillStatus("失敗：" + data.error);
-        return;
-      }
-      setBackfillStatus(`已補上 ${data.updated_count} 筆座標`);
-      const { data: itemsData } = await db.from("itinerary_items").select("*").eq("trip_id", tripId);
-      if (itemsData) setItems(itemsData.map(itemFromDb));
-    } catch (e) {
-      setBackfillStatus("發生錯誤：" + String(e));
-    }
-  };
-
   if (loading) return <div className="loading-screen">讀取中…</div>;
   if (loadError) {
     return (
@@ -707,8 +629,6 @@ function App() {
           <span className="sub">
             {tripStart.slice(5).replace("-", "/")}–{tripEnd.slice(5).replace("-", "/")}
             <button onClick={() => setShowSetup((s) => !s)}>編輯天數</button>
-            <button onClick={handleBackfillLocations}>補上經緯度</button>
-            {backfillStatus && <span style={{ marginLeft: 6 }}>{backfillStatus}</span>}
           </span>
         </div>
         <div className="toggle">
@@ -762,19 +682,6 @@ function App() {
           <div style={{ marginTop: 8 }}>
             <AddInline onAdd={handleAddInbox} placeholder="新增到待排清單" />
           </div>
-        </div>
-      )}
-
-      {section === "itinerary" && (
-        <div className="day-map-panel">
-          <div className="day-tabs">
-            {days.map((d, i) => (
-              <div key={d.key} className={`day-tab ${i === mapDayIdx ? "active" : ""}`} onClick={() => setMapDayIdx(i)}>
-                <div className="md">{d.md}</div><div className="wd">週{d.weekday}</div>
-              </div>
-            ))}
-          </div>
-          <div ref={mapDivRef} className="day-map-canvas"></div>
         </div>
       )}
 

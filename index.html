@@ -423,6 +423,48 @@ function App() {
   }
 
   useEffect(() => {
+    (async () => {
+      try {
+        let { data: trips, error: tripErr } = await db.from("trips").select("*").order("created_at").limit(1);
+        if (tripErr) throw tripErr;
+        let trip;
+        if (!trips || trips.length === 0) {
+          const { data: created, error: createErr } = await db.from("trips").insert({ name: "我的旅程", start_date: tripStart, end_date: tripEnd }).select().single();
+          if (createErr) throw createErr;
+          trip = created;
+        } else {
+          trip = trips[0];
+        }
+        setTripId(trip.id);
+        setTripStart(trip.start_date);
+        setTripEnd(trip.end_date);
+
+        const [itemsRes, flightsRes, hotelsRes, shopRes] = await Promise.all([
+          db.from("itinerary_items").select("*").eq("trip_id", trip.id),
+          db.from("flights").select("*").eq("trip_id", trip.id),
+          db.from("hotels").select("*").eq("trip_id", trip.id),
+          db.from("shopping_items").select("*").eq("trip_id", trip.id),
+        ]);
+        if (itemsRes.error) throw itemsRes.error;
+        if (flightsRes.error) throw flightsRes.error;
+        if (hotelsRes.error) throw hotelsRes.error;
+        if (shopRes.error) throw shopRes.error;
+
+        setItems(itemsRes.data.map(itemFromDb));
+        setFlights(flightsRes.data.map(flightFromDb));
+        setHotels(hotelsRes.data.map(hotelFromDb));
+        setShopping(shopRes.data);
+        setLoading(false);
+      } catch (e) {
+        setLoadError(e);
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  const days = useMemo(() => buildDays(tripStart, tripEnd), [tripStart, tripEnd]);
+
+  useEffect(() => {
     if (section !== "itinerary") return;
     if (typeof google === "undefined" || !google.maps || !mapDivRef.current) return;
     const day = days[mapDayIdx];
@@ -470,47 +512,6 @@ function App() {
     }
   }, [mapDayIdx, items, section, days]);
 
-  useEffect(() => {
-    (async () => {
-      try {
-        let { data: trips, error: tripErr } = await db.from("trips").select("*").order("created_at").limit(1);
-        if (tripErr) throw tripErr;
-        let trip;
-        if (!trips || trips.length === 0) {
-          const { data: created, error: createErr } = await db.from("trips").insert({ name: "我的旅程", start_date: tripStart, end_date: tripEnd }).select().single();
-          if (createErr) throw createErr;
-          trip = created;
-        } else {
-          trip = trips[0];
-        }
-        setTripId(trip.id);
-        setTripStart(trip.start_date);
-        setTripEnd(trip.end_date);
-
-        const [itemsRes, flightsRes, hotelsRes, shopRes] = await Promise.all([
-          db.from("itinerary_items").select("*").eq("trip_id", trip.id),
-          db.from("flights").select("*").eq("trip_id", trip.id),
-          db.from("hotels").select("*").eq("trip_id", trip.id),
-          db.from("shopping_items").select("*").eq("trip_id", trip.id),
-        ]);
-        if (itemsRes.error) throw itemsRes.error;
-        if (flightsRes.error) throw flightsRes.error;
-        if (hotelsRes.error) throw hotelsRes.error;
-        if (shopRes.error) throw shopRes.error;
-
-        setItems(itemsRes.data.map(itemFromDb));
-        setFlights(flightsRes.data.map(flightFromDb));
-        setHotels(hotelsRes.data.map(hotelFromDb));
-        setShopping(shopRes.data);
-        setLoading(false);
-      } catch (e) {
-        setLoadError(e);
-        setLoading(false);
-      }
-    })();
-  }, []);
-
-  const days = useMemo(() => buildDays(tripStart, tripEnd), [tripStart, tripEnd]);
   const itemsForDay = (dayKey) => items.filter((it) => it.day === dayKey);
   const inboxItems = items.filter((it) => !it.day).sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
 

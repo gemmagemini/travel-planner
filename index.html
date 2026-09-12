@@ -136,7 +136,7 @@
   .desktop-grid-wrap { position: relative; }
   .map-toggle-row { display: none; }
   .map-tab { position: fixed; right: 0; top: 100px; background: #33392A; color: #D8DEC4; padding: 12px 8px; border-radius: 10px 0 0 10px; cursor: pointer; font-size: 12px; writing-mode: vertical-rl; letter-spacing: 1px; z-index: 20; box-shadow: -3px 2px 8px rgba(51,57,42,0.18); border: none; }
-  .map-tab.open { background: #C1524A; }
+  .map-tab.open { background: #33392A; }
   .itinerary-split { display: flex; gap: 14px; align-items: stretch; }
   .itinerary-left { flex: 1; min-width: 0; }
   .map-panel-side { flex: 0 0 46%; min-width: 320px; max-width: 560px; background: #EDD9B8; border: 1px solid #D4BB8E; border-radius: 12px; box-shadow: 0 4px 16px rgba(51,57,42,0.12); padding: 12px; display: flex; flex-direction: column; }
@@ -150,6 +150,10 @@
   .grid-nav button:hover { background: #E7E2C7; }
   .day-head { cursor: pointer; }
   .day-head:hover .md { color: #C1524A; }
+  .day-head.map-selected { background: #33392A; }
+  .day-head.map-selected .md { color: #D8DEC4; }
+  .day-head.map-selected .wd { color: #DAD6B6; }
+  .day-head.map-selected:hover .md { color: #D8DEC4; }
   .inbox-label { font-family: 'Fraunces', serif; font-size: 13.5px; font-weight: 600; color: #33392A; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
   .inbox-row { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; -ms-overflow-style: none; }
   .inbox-row::-webkit-scrollbar { display: none; }
@@ -884,7 +888,7 @@ function App() {
                 <div className="desktop-grid" ref={desktopGridRef}>
                   {days.map((d, dayIdx) => (
                     <div key={d.key} className="day-col" onDragOver={(e) => e.preventDefault()} onDrop={(e) => handleDropOnDay(e, d.key)}>
-                      <div className="day-head" onClick={() => setMapDayIdx(dayIdx)}><span className="md">{d.md}</span><span className="wd">{weekdayLabel(d.weekdayIndex, lang)}</span></div>
+                      <div className={`day-head ${mapOpen && dayIdx === mapDayIdx ? "map-selected" : ""}`} onClick={() => setMapDayIdx(dayIdx)}><span className="md">{d.md}</span><span className="wd">{weekdayLabel(d.weekdayIndex, lang)}</span></div>
                       <div className="day-body">
                         {getDayCards(d.key).auto.map((it) => (
                           <AutoItemCard key={it.id} item={it} T={T} onMapClick={handleMapClick} />

@@ -134,16 +134,19 @@
 
   .inbox-shelf { background: #F2F0E2; border: 1px dashed #C7C09E; border-radius: 10px; padding: 10px 12px; margin-bottom: 14px; }
   .desktop-grid-wrap { position: relative; }
-  .map-tab { position: fixed; right: 0; top: 90px; background: #33392A; color: #D8DEC4; padding: 12px 8px; border-radius: 10px 0 0 10px; cursor: pointer; font-size: 12px; writing-mode: vertical-rl; letter-spacing: 1px; z-index: 50; display: flex; align-items: center; gap: 4px; box-shadow: -3px 2px 8px rgba(51,57,42,0.18); }
-  .map-tab.open { background: #C1524A; }
-  .map-panel { position: fixed; right: 0; top: 80px; width: 46vw; min-width: 380px; height: 72vh; background: #F2F0E2; border: 1px solid #C7C09E; border-radius: 12px 0 0 12px; box-shadow: -8px 4px 24px rgba(51,57,42,0.22); z-index: 45; padding: 12px; display: flex; flex-direction: column; }
+  .map-toggle-row { display: flex; justify-content: flex-end; margin-bottom: 8px; }
+  .map-toggle-btn { background: #33392A; color: #D8DEC4; padding: 8px 14px; border-radius: 8px; cursor: pointer; font-size: 12.5px; border: none; }
+  .map-toggle-btn.open { background: #C1524A; }
+  .itinerary-split { display: flex; gap: 14px; align-items: flex-start; }
+  .itinerary-left { flex: 1; min-width: 0; }
+  .map-panel-side { flex: 0 0 46%; min-width: 320px; max-width: 560px; background: #F2F0E2; border: 1px solid #C7C09E; border-radius: 12px; box-shadow: 0 4px 16px rgba(51,57,42,0.12); padding: 12px; display: flex; flex-direction: column; }
   .map-panel-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
   .map-panel-head .md { font-family: 'Fraunces', serif; font-size: 17px; font-weight: 600; color: #33392A; }
   .map-panel-close { border: none; background: transparent; color: #807A54; cursor: pointer; padding: 4px; }
-  .map-canvas-el { flex: 1; min-height: 260px; border-radius: 8px; background: #C9DCE0; }
+  .map-canvas-el { width: 100%; height: 420px; border-radius: 8px; background: #C9DCE0; }
   .map-hint { font-size: 10.5px; color: #8F8964; text-align: center; margin-top: 6px; }
-  .grid-nav { position: fixed; left: 12px; bottom: 16px; display: flex; gap: 8px; z-index: 40; }
-  .grid-nav button { width: 34px; height: 34px; border-radius: 50%; border: 1px solid #C7C09E; background: #F2F0E2; color: #33392A; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(51,57,42,0.15); }
+  .grid-nav { display: inline-flex; gap: 8px; margin-bottom: 8px; }
+  .grid-nav button { width: 30px; height: 30px; border-radius: 50%; border: 1px solid #C7C09E; background: #F2F0E2; color: #33392A; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(51,57,42,0.12); }
   .grid-nav button:hover { background: #E7E2C7; }
   .day-head { cursor: pointer; }
   .day-head:hover .md { color: #C1524A; }
@@ -869,41 +872,47 @@ function App() {
       {section === "itinerary" && (
         !isMobile ? (
           <div className="desktop-grid-wrap">
-            <div className={`map-tab ${mapOpen ? "open" : ""}`} onClick={() => setMapOpen((o) => !o)}>
-              {mapOpen ? T.collapseMap : T.expandMap}
+            <div className="map-toggle-row">
+              <button className={`map-toggle-btn ${mapOpen ? "open" : ""}`} onClick={() => setMapOpen((o) => !o)}>
+                {mapOpen ? T.collapseMap : T.expandMap}
+              </button>
             </div>
-            <div className="grid-nav">
-              <button onClick={() => desktopGridRef.current?.scrollBy({ left: -220, behavior: "smooth" })}>‹</button>
-              <button onClick={() => desktopGridRef.current?.scrollBy({ left: 220, behavior: "smooth" })}>›</button>
-            </div>
-            {mapOpen && (
-              <div className="map-panel">
-                <div className="map-panel-head">
-                  <span className="md">{days[mapDayIdx] ? `${days[mapDayIdx].md} ${weekdayLabel(days[mapDayIdx].weekdayIndex, lang)}` : ""}</span>
-                  <button className="map-panel-close" onClick={() => setMapOpen(false)}><XIcon size={15} /></button>
+            <div className="itinerary-split">
+              <div className="itinerary-left">
+                <div className="grid-nav">
+                  <button onClick={() => desktopGridRef.current?.scrollBy({ left: -220, behavior: "smooth" })}>‹</button>
+                  <button onClick={() => desktopGridRef.current?.scrollBy({ left: 220, behavior: "smooth" })}>›</button>
                 </div>
-                <div ref={mapDivRef} className="map-canvas-el"></div>
-                <div className="map-hint">{T.mapHint}</div>
-              </div>
-            )}
-            <div className="desktop-grid" ref={desktopGridRef}>
-              {days.map((d, dayIdx) => (
-                <div key={d.key} className="day-col" onDragOver={(e) => e.preventDefault()} onDrop={(e) => handleDropOnDay(e, d.key)}>
-                  <div className="day-head" onClick={() => setMapDayIdx(dayIdx)}><span className="md">{d.md}</span><span className="wd">{weekdayLabel(d.weekdayIndex, lang)}</span></div>
-                  <div className="day-body">
-                    {getDayCards(d.key).auto.map((it) => (
-                      <AutoItemCard key={it.id} item={it} T={T} onMapClick={handleMapClick} />
-                    ))}
-                    {getDayCards(d.key).manual.map((it) => (
-                      <div key={it.id} onDragOver={(e) => e.preventDefault()} onDrop={(e) => handleDropBeforeCard(e, d.key, it.id)}>
-                        <ItemCard item={it} lang={lang} T={T} draggable={editingId !== it.id} onDragStart={handleDragStart} onDragEnd={handleDragEnd} onMapClick={handleMapClick} onDelete={handleDelete} isEditing={editingId === it.id} onEditStart={setEditingId} onEditSave={handleEditSave} />
+                <div className="desktop-grid" ref={desktopGridRef}>
+                  {days.map((d, dayIdx) => (
+                    <div key={d.key} className="day-col" onDragOver={(e) => e.preventDefault()} onDrop={(e) => handleDropOnDay(e, d.key)}>
+                      <div className="day-head" onClick={() => setMapDayIdx(dayIdx)}><span className="md">{d.md}</span><span className="wd">{weekdayLabel(d.weekdayIndex, lang)}</span></div>
+                      <div className="day-body">
+                        {getDayCards(d.key).auto.map((it) => (
+                          <AutoItemCard key={it.id} item={it} T={T} onMapClick={handleMapClick} />
+                        ))}
+                        {getDayCards(d.key).manual.map((it) => (
+                          <div key={it.id} onDragOver={(e) => e.preventDefault()} onDrop={(e) => handleDropBeforeCard(e, d.key, it.id)}>
+                            <ItemCard item={it} lang={lang} T={T} draggable={editingId !== it.id} onDragStart={handleDragStart} onDragEnd={handleDragEnd} onMapClick={handleMapClick} onDelete={handleDelete} isEditing={editingId === it.id} onEditStart={setEditingId} onEditSave={handleEditSave} />
+                          </div>
+                        ))}
+                        <AddInline onAdd={(name) => handleAdd(d.key, name)} placeholder={T.addItem} inputPlaceholder={T.inputContent} />
+                        {getDayCards(d.key).nightly.map((h) => <NightlyHotelStrip key={`night-${h.id}-${d.key}`} hotel={h} T={T} onMapClick={handleMapClick} />)}
                       </div>
-                    ))}
-                    <AddInline onAdd={(name) => handleAdd(d.key, name)} placeholder={T.addItem} inputPlaceholder={T.inputContent} />
-                    {getDayCards(d.key).nightly.map((h) => <NightlyHotelStrip key={`night-${h.id}-${d.key}`} hotel={h} T={T} onMapClick={handleMapClick} />)}
-                  </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              </div>
+              {mapOpen && (
+                <div className="map-panel-side">
+                  <div className="map-panel-head">
+                    <span className="md">{days[mapDayIdx] ? `${days[mapDayIdx].md} ${weekdayLabel(days[mapDayIdx].weekdayIndex, lang)}` : ""}</span>
+                    <button className="map-panel-close" onClick={() => setMapOpen(false)}><XIcon size={15} /></button>
+                  </div>
+                  <div ref={mapDivRef} className="map-canvas-el"></div>
+                  <div className="map-hint">{T.mapHint}</div>
+                </div>
+              )}
             </div>
           </div>
         ) : (

@@ -50,7 +50,8 @@
   .setup-field input { border: 1px solid #C7C09E; border-radius: 6px; padding: 6px 8px; font-family: 'IBM Plex Sans', sans-serif; font-size: 12.5px; }
   .setup-close { margin-left: auto; border: none; background: #33392A; color: #D8DEC4; border-radius: 6px; padding: 7px 12px; font-size: 12.5px; cursor: pointer; }
 
-  .desktop-grid { display: flex; align-items: flex-start; gap: 14px; overflow-x: auto; padding-bottom: 10px; }
+  .desktop-grid { display: flex; align-items: flex-start; gap: 14px; overflow-x: auto; padding-bottom: 10px; scrollbar-width: none; -ms-overflow-style: none; }
+  .desktop-grid::-webkit-scrollbar { display: none; }
   .day-col { flex: 0 0 190px; background: #F2F0E2; border: 1px solid #C7C09E; border-radius: 10px; display: flex; flex-direction: column; }
   .day-head { padding: 10px 12px 8px; border-bottom: 1.5px dashed #C7C09E; display: flex; align-items: baseline; gap: 8px; }
   .day-head .md { font-family: 'Fraunces', serif; font-size: 19px; font-weight: 600; }
@@ -65,7 +66,7 @@
   .night-strip { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #5C5A40; padding-top: 6px; margin-top: 2px; border-top: 1px dashed #C7C09E; cursor: pointer; }
   .night-strip:hover { color: #33392A; }
   .card-top { display: flex; align-items: center; gap: 6px; margin-bottom: 3px; }
-  .grip { color: #A8A17E; }
+  .grip { color: #A8A17E; padding: 8px; margin: -8px; }
   .card-time { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #C1524A; background: #F3DAD6; padding: 1px 5px; border-radius: 4px; }
   .icon-btn { border: none; background: transparent; color: #A8A17E; cursor: pointer; padding: 2px; display: flex; align-items: center; gap: 4px; border-radius: 4px; }
   .icon-btn:hover { background: #E7E2C7; color: #33392A; }
@@ -211,7 +212,7 @@ const flightFromDb = (r) => ({ id: r.id, date: r.date, time: r.time || "", fligh
 const flightToDb = (d) => ({ date: d.date, time: d.time, flight_no: d.flightNo, from_code: d.from, to_code: d.to, terminal: d.terminal, note: d.note });
 const hotelFromDb = (r) => ({ id: r.id, name: r.name || "", address: r.address || "", checkin: r.checkin, checkinTime: r.checkin_time || "", checkout: r.checkout, checkoutTime: r.checkout_time || "", confirmation: r.confirmation || "" });
 const hotelToDb = (d) => ({ name: d.name, address: d.address, checkin: d.checkin, checkin_time: d.checkinTime, checkout: d.checkout, checkout_time: d.checkoutTime, confirmation: d.confirmation });
-const itemFromDb = (r) => ({ id: r.id, day: r.day, time: r.time || "", name: r.name, note: r.note || "" });
+const itemFromDb = (r) => ({ id: r.id, day: r.day, time: r.time || "", name: r.name, note: r.note || "", sortOrder: r.sort_order ?? 0 });
 
 /* ============ 行程卡片 ============ */
 function ItemCard({ item, draggable, onDragStart, onDragEnd, onMapClick, onDelete, isEditing, onEditStart, onEditSave }) {
@@ -389,7 +390,9 @@ function App() {
       ghostClass: "drag-over",
       filter: ".sortable-ignore",
       preventOnFilter: true,
-      handle: ".grip",
+      delay: 150,
+      delayOnTouchOnly: true,
+      touchStartThreshold: 5,
       onEnd: (evt) => {
         // Sortable 會直接搬動 DOM 節點，這裡先把它搬回原位，
         // 改成完全交給 React 依資料狀態重新渲染，避免兩邊打架造成畫面壞掉。
@@ -398,8 +401,9 @@ function App() {
           evt.from.insertBefore(evt.item, referenceNode);
         }
         const itemId = evt.item.getAttribute("data-item-id");
-        const targetDay = evt.to.getAttribute("data-day") || null;
-        if (itemId) assignDay(itemId, targetDay);
+        const targetDayAttr = evt.to.getAttribute("data-day");
+        const targetDay = targetDayAttr || null;
+        if (itemId) moveItem(itemId, targetDay, evt.newIndex);
       },
     };
     const instances = [];
@@ -453,7 +457,7 @@ function App() {
 
   const days = useMemo(() => buildDays(tripStart, tripEnd), [tripStart, tripEnd]);
   const itemsForDay = (dayKey) => items.filter((it) => it.day === dayKey);
-  const inboxItems = items.filter((it) => !it.day);
+  const inboxItems = items.filter((it) => !it.day).sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
 
   const autoItemsForDay = (dayKey) => {
     const timed = [];
@@ -473,26 +477,57 @@ function App() {
 
   const getDayCards = (dayKey) => {
     const { timed: autoTimed, nightly } = autoItemsForDay(dayKey);
-    const manual = itemsForDay(dayKey).map((it) => ({ ...it, __manual: true }));
-    const combined = [...autoTimed, ...manual];
-    combined.sort((a, b) => (a.time || "99:99").localeCompare(b.time || "99:99"));
-    return { timed: combined, nightly };
+    const manual = itemsForDay(dayKey)
+      .map((it) => ({ ...it, __manual: true }))
+      .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
+    return { auto: autoTimed, manual, nightly };
   };
+
+  const midpointOrder = (before, after) => {
+    if (before == null && after == null) return Date.now() / 1000;
+    if (before == null) return after - 1;
+    if (after == null) return before + 1;
+    return (before + after) / 2;
+  };
+
+  const manualListFor = (dayKeyOrNull) =>
+    items
+      .filter((it) => (dayKeyOrNull === null ? !it.day : it.day === dayKeyOrNull))
+      .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
 
   const handleMapClick = (name) => window.open(mapsUrl(name), "_blank");
 
   /* ---- 行程項目 CRUD ---- */
   const handleDragStart = (e, id) => { setDragItemId(id); e.dataTransfer.effectAllowed = "move"; };
   const handleDragEnd = () => setDragItemId(null);
+
+  const moveItem = async (id, targetDayKeyOrNull, targetIndex) => {
+    const targetList = manualListFor(targetDayKeyOrNull).filter((it) => it.id !== id);
+    const clampedIndex = Math.max(0, Math.min(targetIndex, targetList.length));
+    const before = targetList[clampedIndex - 1];
+    const after = targetList[clampedIndex];
+    const newSortOrder = midpointOrder(before?.sortOrder, after?.sortOrder);
+    setItems((prev) => prev.map((it) => (it.id === id ? { ...it, day: targetDayKeyOrNull, sortOrder: newSortOrder } : it)));
+    await db.from("itinerary_items").update({ day: targetDayKeyOrNull, sort_order: newSortOrder }).eq("id", id);
+  };
   const handleDropOnDay = async (e, dayKey) => {
     e.preventDefault();
+    e.stopPropagation();
     const id = dragItemId;
     if (!id) return;
-    await assignDay(id, dayKey);
+    await moveItem(id, dayKey, manualListFor(dayKey).length);
+  };
+  const handleDropBeforeCard = async (e, dayKeyOrNull, beforeItemId) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const id = dragItemId;
+    if (!id || id === beforeItemId) return;
+    const list = manualListFor(dayKeyOrNull).filter((it) => it.id !== id);
+    const idx = list.findIndex((it) => it.id === beforeItemId);
+    await moveItem(id, dayKeyOrNull, idx === -1 ? list.length : idx);
   };
   const assignDay = async (id, dayKey) => {
-    setItems((prev) => prev.map((it) => (it.id === id ? { ...it, day: dayKey } : it)));
-    await db.from("itinerary_items").update({ day: dayKey }).eq("id", id);
+    await moveItem(id, dayKey, manualListFor(dayKey).length);
   };
   const handleAdd = async (dayKey, name) => {
     const { data, error } = await db.from("itinerary_items").insert({ trip_id: tripId, day: dayKey, time: "", name, note: "" }).select().single();
@@ -627,7 +662,7 @@ function App() {
           ) : (
             <div className="inbox-row" ref={inboxListRef} data-day="">
               {inboxItems.map((it) => (
-                <div key={it.id} className="inbox-card-wrap" data-item-id={it.id}>
+                <div key={it.id} className="inbox-card-wrap" data-item-id={it.id} onDragOver={(e) => e.preventDefault()} onDrop={(e) => handleDropBeforeCard(e, null, it.id)}>
                   <ItemCard
                     item={it}
                     draggable={editingId !== it.id}
@@ -656,15 +691,14 @@ function App() {
               <div key={d.key} className="day-col" onDragOver={(e) => e.preventDefault()} onDrop={(e) => handleDropOnDay(e, d.key)}>
                 <div className="day-head"><span className="md">{d.md}</span><span className="wd">週{d.weekday}</span></div>
                 <div className="day-body">
-                  {getDayCards(d.key).timed.map((it) =>
-                    it.__manual ? (
-                      <div key={it.id} onDragOver={(e) => e.preventDefault()} onDrop={(e) => handleDropOnDay(e, d.key)}>
-                        <ItemCard item={it} draggable={editingId !== it.id} onDragStart={handleDragStart} onDragEnd={handleDragEnd} onMapClick={handleMapClick} onDelete={handleDelete} isEditing={editingId === it.id} onEditStart={setEditingId} onEditSave={handleEditSave} />
-                      </div>
-                    ) : (
-                      <AutoItemCard key={it.id} item={it} onMapClick={handleMapClick} />
-                    )
-                  )}
+                  {getDayCards(d.key).auto.map((it) => (
+                    <AutoItemCard key={it.id} item={it} onMapClick={handleMapClick} />
+                  ))}
+                  {getDayCards(d.key).manual.map((it) => (
+                    <div key={it.id} onDragOver={(e) => e.preventDefault()} onDrop={(e) => handleDropBeforeCard(e, d.key, it.id)}>
+                      <ItemCard item={it} draggable={editingId !== it.id} onDragStart={handleDragStart} onDragEnd={handleDragEnd} onMapClick={handleMapClick} onDelete={handleDelete} isEditing={editingId === it.id} onEditStart={setEditingId} onEditSave={handleEditSave} />
+                    </div>
+                  ))}
                   <AddInline onAdd={(name) => handleAdd(d.key, name)} />
                   {getDayCards(d.key).nightly.map((h) => <NightlyHotelStrip key={`night-${h.id}-${d.key}`} hotel={h} onMapClick={handleMapClick} />)}
                 </div>
@@ -680,17 +714,16 @@ function App() {
                 </div>
               ))}
             </div>
+            {activeDay && getDayCards(activeDay.key).auto.map((it) => (
+              <AutoItemCard key={it.id} item={it} onMapClick={handleMapClick} />
+            ))}
             <div className="mobile-list" ref={dayListRef} data-day={activeDay ? activeDay.key : ""}>
-              {activeDay && getDayCards(activeDay.key).timed.length === 0 && getDayCards(activeDay.key).nightly.length === 0 && <div className="empty-note sortable-ignore">這天還沒有安排行程</div>}
-              {activeDay && getDayCards(activeDay.key).timed.map((it) =>
-                it.__manual ? (
-                  <div key={it.id} data-item-id={it.id}>
-                    <ItemCard item={it} draggable onDragStart={handleDragStart} onDragEnd={handleDragEnd} onMapClick={handleMapClick} onDelete={handleDelete} isEditing={editingId === it.id} onEditStart={setEditingId} onEditSave={handleEditSave} />
-                  </div>
-                ) : (
-                  <div key={it.id} className="sortable-ignore"><AutoItemCard item={it} onMapClick={handleMapClick} /></div>
-                )
-              )}
+              {activeDay && getDayCards(activeDay.key).manual.length === 0 && <div className="empty-note sortable-ignore">這天還沒有安排行程</div>}
+              {activeDay && getDayCards(activeDay.key).manual.map((it) => (
+                <div key={it.id} data-item-id={it.id}>
+                  <ItemCard item={it} draggable onDragStart={handleDragStart} onDragEnd={handleDragEnd} onMapClick={handleMapClick} onDelete={handleDelete} isEditing={editingId === it.id} onEditStart={setEditingId} onEditSave={handleEditSave} />
+                </div>
+              ))}
               {activeDay && <div className="sortable-ignore"><AddInline onAdd={(name) => handleAdd(activeDay.key, name)} /></div>}
               {activeDay && getDayCards(activeDay.key).nightly.map((h) => <div key={`night-${h.id}-${activeDay.key}`} className="sortable-ignore"><NightlyHotelStrip hotel={h} onMapClick={handleMapClick} /></div>)}
             </div>

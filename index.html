@@ -136,24 +136,25 @@
   .desktop-grid-wrap { position: relative; }
   .map-toggle-row { display: none; }
   .map-tab { position: fixed; right: 0; top: 100px; background: #33392A; color: #D8DEC4; padding: 12px 8px; border-radius: 10px 0 0 10px; cursor: pointer; font-size: 12px; writing-mode: vertical-rl; letter-spacing: 1px; z-index: 20; box-shadow: -3px 2px 8px rgba(51,57,42,0.18); border: none; }
-  .map-tab.open { background: #33392A; }
+  .map-tab.open { background: #C1524A; }
   .itinerary-split { display: flex; gap: 14px; align-items: stretch; }
   .itinerary-left { flex: 1; min-width: 0; }
-  .map-panel-side { flex: 0 0 46%; min-width: 320px; max-width: 560px; background: #EDD9B8; border: 1px solid #D4BB8E; border-radius: 12px; box-shadow: 0 4px 16px rgba(51,57,42,0.12); padding: 12px; display: flex; flex-direction: column; }
+  .map-panel-side { flex: 0 0 46%; min-width: 320px; max-width: 560px; background: #33392A; border: 1px solid #4A5140; border-radius: 12px; box-shadow: 0 4px 16px rgba(51,57,42,0.12); padding: 12px; display: flex; flex-direction: column; }
   .map-panel-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
-  .map-panel-head .md { font-family: 'Fraunces', serif; font-size: 17px; font-weight: 600; color: #33392A; }
-  .map-panel-close { border: none; background: transparent; color: #8A7752; cursor: pointer; padding: 4px; }
-  .map-canvas-el { width: 100%; flex: 1; min-height: 320px; border-radius: 8px; background: #33392A; }
-  .map-hint { font-size: 10.5px; color: #9C8760; text-align: center; margin-top: 6px; }
+  .map-panel-head .md { font-family: 'Fraunces', serif; font-size: 17px; font-weight: 600; color: #D8DEC4; }
+  .map-panel-close { border: none; background: transparent; color: #B7BDA0; cursor: pointer; padding: 4px; }
+  .map-canvas-el { width: 100%; flex: 1; min-height: 320px; border-radius: 8px; background: #4A5140; }
+  .map-hint { font-size: 10.5px; color: #9BA184; text-align: center; margin-top: 6px; }
   .grid-nav { display: inline-flex; gap: 8px; margin-bottom: 8px; }
   .grid-nav button { width: 30px; height: 30px; border-radius: 50%; border: 1px solid #C7C09E; background: #F2F0E2; color: #33392A; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(51,57,42,0.12); }
   .grid-nav button:hover { background: #E7E2C7; }
   .day-head { cursor: pointer; }
   .day-head:hover .md { color: #C1524A; }
-  .day-head.map-selected { background: #33392A; }
-  .day-head.map-selected .md { color: #D8DEC4; }
-  .day-head.map-selected .wd { color: #DAD6B6; }
-  .day-head.map-selected:hover .md { color: #D8DEC4; }
+  .day-col.map-selected { background: #33392A; }
+  .day-col.map-selected .day-head { border-bottom-color: #4A5140; }
+  .day-col.map-selected .day-head .md { color: #D8DEC4; }
+  .day-col.map-selected .day-head .wd { color: #DAD6B6; }
+  .day-col.map-selected .day-head:hover .md { color: #D8DEC4; }
   .inbox-label { font-family: 'Fraunces', serif; font-size: 13.5px; font-weight: 600; color: #33392A; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
   .inbox-row { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; -ms-overflow-style: none; }
   .inbox-row::-webkit-scrollbar { display: none; }
@@ -887,8 +888,8 @@ function App() {
                 </div>
                 <div className="desktop-grid" ref={desktopGridRef}>
                   {days.map((d, dayIdx) => (
-                    <div key={d.key} className="day-col" onDragOver={(e) => e.preventDefault()} onDrop={(e) => handleDropOnDay(e, d.key)}>
-                      <div className={`day-head ${mapOpen && dayIdx === mapDayIdx ? "map-selected" : ""}`} onClick={() => setMapDayIdx(dayIdx)}><span className="md">{d.md}</span><span className="wd">{weekdayLabel(d.weekdayIndex, lang)}</span></div>
+                    <div key={d.key} className={`day-col ${mapOpen && dayIdx === mapDayIdx ? "map-selected" : ""}`} onDragOver={(e) => e.preventDefault()} onDrop={(e) => handleDropOnDay(e, d.key)}>
+                      <div className="day-head" onClick={() => setMapDayIdx(dayIdx)}><span className="md">{d.md}</span><span className="wd">{weekdayLabel(d.weekdayIndex, lang)}</span></div>
                       <div className="day-body">
                         {getDayCards(d.key).auto.map((it) => (
                           <AutoItemCard key={it.id} item={it} T={T} onMapClick={handleMapClick} />

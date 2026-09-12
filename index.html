@@ -389,6 +389,7 @@ function App() {
       ghostClass: "drag-over",
       filter: ".sortable-ignore",
       preventOnFilter: true,
+      handle: ".grip",
       onEnd: (evt) => {
         // Sortable 會直接搬動 DOM 節點，這裡先把它搬回原位，
         // 改成完全交給 React 依資料狀態重新渲染，避免兩邊打架造成畫面壞掉。
@@ -684,7 +685,7 @@ function App() {
               {activeDay && getDayCards(activeDay.key).timed.map((it) =>
                 it.__manual ? (
                   <div key={it.id} data-item-id={it.id}>
-                    <ItemCard item={it} onMapClick={handleMapClick} onDelete={handleDelete} isEditing={editingId === it.id} onEditStart={setEditingId} onEditSave={handleEditSave} />
+                    <ItemCard item={it} draggable onDragStart={handleDragStart} onDragEnd={handleDragEnd} onMapClick={handleMapClick} onDelete={handleDelete} isEditing={editingId === it.id} onEditStart={setEditingId} onEditSave={handleEditSave} />
                   </div>
                 ) : (
                   <div key={it.id} className="sortable-ignore"><AutoItemCard item={it} onMapClick={handleMapClick} /></div>

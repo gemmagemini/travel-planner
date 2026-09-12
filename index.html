@@ -155,6 +155,10 @@
   .day-col.map-selected .day-head .md { color: #D8DEC4; }
   .day-col.map-selected .day-head .wd { color: #DAD6B6; }
   .day-col.map-selected .day-head:hover .md { color: #D8DEC4; }
+  .day-col.map-selected .add-row { color: #A8AD8E; border-color: #5C6350; }
+  .day-col.map-selected .add-row:hover { color: #E0A93A; border-color: #E0A93A; }
+  .day-col.map-selected .night-strip { color: #A8AD8E; border-top-color: #5C6350; }
+  .day-col.map-selected .night-strip:hover { color: #D8DEC4; }
   .inbox-label { font-family: 'Fraunces', serif; font-size: 13.5px; font-weight: 600; color: #33392A; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
   .inbox-row { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; -ms-overflow-style: none; }
   .inbox-row::-webkit-scrollbar { display: none; }
@@ -882,10 +886,6 @@ function App() {
             </div>
             <div className="itinerary-split">
               <div className="itinerary-left">
-                <div className="grid-nav">
-                  <button onClick={() => desktopGridRef.current?.scrollBy({ left: -220, behavior: "smooth" })}>‹</button>
-                  <button onClick={() => desktopGridRef.current?.scrollBy({ left: 220, behavior: "smooth" })}>›</button>
-                </div>
                 <div className="desktop-grid" ref={desktopGridRef}>
                   {days.map((d, dayIdx) => (
                     <div key={d.key} className={`day-col ${mapOpen && dayIdx === mapDayIdx ? "map-selected" : ""}`} onDragOver={(e) => e.preventDefault()} onDrop={(e) => handleDropOnDay(e, d.key)}>

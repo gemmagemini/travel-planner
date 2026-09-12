@@ -133,13 +133,13 @@
 
   .inbox-shelf { background: #F2F0E2; border: 1px dashed #C7C09E; border-radius: 10px; padding: 10px 12px; margin-bottom: 14px; }
   .desktop-grid-wrap { position: relative; }
-  .map-tab { position: absolute; right: 0; top: 6px; background: #33392A; color: #D8DEC4; padding: 10px 7px; border-radius: 10px 0 0 10px; cursor: pointer; font-size: 12px; writing-mode: vertical-rl; letter-spacing: 1px; z-index: 5; display: flex; align-items: center; gap: 4px; }
+  .map-tab { position: fixed; right: 0; top: 90px; background: #33392A; color: #D8DEC4; padding: 12px 8px; border-radius: 10px 0 0 10px; cursor: pointer; font-size: 12px; writing-mode: vertical-rl; letter-spacing: 1px; z-index: 50; display: flex; align-items: center; gap: 4px; box-shadow: -3px 2px 8px rgba(51,57,42,0.18); }
   .map-tab.open { background: #C1524A; }
-  .map-panel { position: absolute; right: 0; top: 0; bottom: 0; width: 320px; background: #F2F0E2; border: 1px solid #C7C09E; border-radius: 10px; box-shadow: -6px 0 16px rgba(51,57,42,0.15); z-index: 4; padding: 10px; display: flex; flex-direction: column; }
+  .map-panel { position: fixed; right: 0; top: 80px; width: 46vw; min-width: 380px; height: 72vh; background: #F2F0E2; border: 1px solid #C7C09E; border-radius: 12px 0 0 12px; box-shadow: -8px 4px 24px rgba(51,57,42,0.22); z-index: 45; padding: 12px; display: flex; flex-direction: column; }
   .map-panel-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
-  .map-panel-head .md { font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: #33392A; }
+  .map-panel-head .md { font-family: 'Fraunces', serif; font-size: 17px; font-weight: 600; color: #33392A; }
   .map-panel-close { border: none; background: transparent; color: #807A54; cursor: pointer; padding: 4px; }
-  .map-canvas-el { flex: 1; min-height: 260px; border-radius: 8px; background: #D8DEC4; }
+  .map-canvas-el { flex: 1; min-height: 260px; border-radius: 8px; background: #C9DCE0; }
   .map-hint { font-size: 10.5px; color: #8F8964; text-align: center; margin-top: 6px; }
   .day-head { cursor: pointer; }
   .day-head:hover .md { color: #C1524A; }
@@ -163,6 +163,7 @@ const { useState, useEffect, useMemo, useRef } = React;
 /* ============ Supabase 設定 ============ */
 const SUPABASE_URL = "https://srcdjdomsdwzdcwmivtx.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_bdAnUH4j8-z6N__aux2pig_Fg0yq2kO";
+const EDGE_FUNCTION_URL = "https://srcdjdomsdwzdcwmivtx.supabase.co/functions/v1/smooth-endpoint";
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const WEEKDAY = ["日", "一", "二", "三", "四", "五", "六"];
@@ -675,6 +676,28 @@ function App() {
     if (tripId) await db.from("trips").update({ end_date: val }).eq("id", tripId);
   };
 
+  const [backfillStatus, setBackfillStatus] = useState("");
+  const handleBackfillLocations = async () => {
+    setBackfillStatus("補座標中…");
+    try {
+      const res = await fetch(EDGE_FUNCTION_URL, {
+        method: "POST",
+        headers: { apikey: SUPABASE_ANON_KEY, "Content-Type": "application/json" },
+        body: JSON.stringify({ trip_id: tripId, backfill: true }),
+      });
+      const data = await res.json();
+      if (data.error) {
+        setBackfillStatus("失敗：" + data.error);
+        return;
+      }
+      setBackfillStatus(`已補上 ${data.updated_count} 筆座標`);
+      const { data: itemsData } = await db.from("itinerary_items").select("*").eq("trip_id", tripId);
+      if (itemsData) setItems(itemsData.map(itemFromDb));
+    } catch (e) {
+      setBackfillStatus("發生錯誤：" + String(e));
+    }
+  };
+
   if (loading) return <div className="loading-screen">讀取中…</div>;
   if (loadError) {
     return (
@@ -699,6 +722,8 @@ function App() {
           <span className="sub">
             {tripStart.slice(5).replace("-", "/")}–{tripEnd.slice(5).replace("-", "/")}
             <button onClick={() => setShowSetup((s) => !s)}>編輯天數</button>
+            <button onClick={handleBackfillLocations}>補上經緯度</button>
+            {backfillStatus && <span style={{ marginLeft: 6 }}>{backfillStatus}</span>}
           </span>
         </div>
         <div className="toggle">

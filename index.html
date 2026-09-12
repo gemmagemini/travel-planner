@@ -70,6 +70,7 @@
   .card-top { display: flex; align-items: center; gap: 6px; margin-bottom: 3px; }
   .grip { color: #A8A17E; padding: 8px; margin: -8px; }
   .card-time { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #C1524A; background: #F3DAD6; padding: 1px 5px; border-radius: 4px; }
+  .map-index-badge { width: 16px; height: 16px; border-radius: 50%; background: #C1524A; color: #fff; font-size: 9.5px; display: flex; align-items: center; justify-content: center; flex: none; }
   .icon-btn { border: none; background: transparent; color: #A8A17E; cursor: pointer; padding: 2px; display: flex; align-items: center; gap: 4px; border-radius: 4px; }
   .icon-btn:hover { background: #E7E2C7; color: #33392A; }
   .edit-btn { margin-left: auto; }
@@ -141,6 +142,9 @@
   .map-panel-close { border: none; background: transparent; color: #807A54; cursor: pointer; padding: 4px; }
   .map-canvas-el { flex: 1; min-height: 260px; border-radius: 8px; background: #C9DCE0; }
   .map-hint { font-size: 10.5px; color: #8F8964; text-align: center; margin-top: 6px; }
+  .grid-nav { position: fixed; left: 12px; bottom: 16px; display: flex; gap: 8px; z-index: 40; }
+  .grid-nav button { width: 34px; height: 34px; border-radius: 50%; border: 1px solid #C7C09E; background: #F2F0E2; color: #33392A; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(51,57,42,0.15); }
+  .grid-nav button:hover { background: #E7E2C7; }
   .day-head { cursor: pointer; }
   .day-head:hover .md { color: #C1524A; }
   .inbox-label { font-family: 'Fraunces', serif; font-size: 13.5px; font-weight: 600; color: #33392A; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
@@ -247,6 +251,7 @@ function ItemCard({ item, draggable, onDragStart, onDragEnd, onMapClick, onDelet
     <div className="card" draggable={draggable} onDragStart={draggable ? (e) => onDragStart(e, item.id) : undefined} onDragEnd={draggable ? onDragEnd : undefined}>
       <div className="card-top">
         {draggable && <GripVertical size={14} className="grip" />}
+        {item.mapIndex != null && <span className="map-index-badge">{item.mapIndex}</span>}
         {item.time && <span className="card-time">{item.time}</span>}
         <button className="icon-btn edit-btn" title="編輯" onClick={() => onEditStart(item.id)}><Pencil size={12} /></button>
         <button className="icon-btn map-btn" title="在 Google Maps 開啟" onClick={() => onMapClick(item.name)}><MapPin size={13} /></button>
@@ -396,6 +401,7 @@ function App() {
   const dayListRef = useRef(null);
   const mapDivRef = useRef(null);
   const mapObjRef = useRef(null);
+  const desktopGridRef = useRef(null);
   const [mapOpen, setMapOpen] = useState(false);
   const [mapDayIdx, setMapDayIdx] = useState(0);
 
@@ -503,6 +509,7 @@ function App() {
         new google.maps.Marker({
           position: { lat: p.lat, lng: p.lng },
           map,
+          title: p.name,
           label: { text: String(i + 1), color: "#fff", fontSize: "11px" },
           icon: { path: google.maps.SymbolPath.CIRCLE, scale: 11, fillColor: "#C1524A", fillOpacity: 1, strokeWeight: 0 },
         })
@@ -549,9 +556,17 @@ function App() {
 
   const getDayCards = (dayKey) => {
     const { timed: autoTimed, nightly } = autoItemsForDay(dayKey);
+    let mapCounter = 0;
     const manual = itemsForDay(dayKey)
       .map((it) => ({ ...it, __manual: true }))
-      .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
+      .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
+      .map((it) => {
+        if (it.lat != null && it.lng != null) {
+          mapCounter += 1;
+          return { ...it, mapIndex: mapCounter };
+        }
+        return { ...it, mapIndex: null };
+      });
     return { auto: autoTimed, manual, nightly };
   };
 
@@ -786,6 +801,10 @@ function App() {
             <div className={`map-tab ${mapOpen ? "open" : ""}`} onClick={() => setMapOpen((o) => !o)}>
               {mapOpen ? "收合地圖" : "展開地圖"}
             </div>
+            <div className="grid-nav">
+              <button onClick={() => desktopGridRef.current?.scrollBy({ left: -220, behavior: "smooth" })}>‹</button>
+              <button onClick={() => desktopGridRef.current?.scrollBy({ left: 220, behavior: "smooth" })}>›</button>
+            </div>
             {mapOpen && (
               <div className="map-panel">
                 <div className="map-panel-head">
@@ -796,7 +815,7 @@ function App() {
                 <div className="map-hint">點左邊日期上方的日期標題，切換地圖內容</div>
               </div>
             )}
-            <div className="desktop-grid">
+            <div className="desktop-grid" ref={desktopGridRef}>
               {days.map((d, dayIdx) => (
                 <div key={d.key} className="day-col" onDragOver={(e) => e.preventDefault()} onDrop={(e) => handleDropOnDay(e, d.key)}>
                   <div className="day-head" onClick={() => setMapDayIdx(dayIdx)}><span className="md">{d.md}</span><span className="wd">週{d.weekday}</span></div>

@@ -170,7 +170,62 @@ const SUPABASE_ANON_KEY = "sb_publishable_bdAnUH4j8-z6N__aux2pig_Fg0yq2kO";
 const EDGE_FUNCTION_URL = "https://srcdjdomsdwzdcwmivtx.supabase.co/functions/v1/smooth-endpoint";
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-const WEEKDAY = ["日", "一", "二", "三", "四", "五", "六"];
+const WEEKDAY_ZH = ["日", "一", "二", "三", "四", "五", "六"];
+const WEEKDAY_EN = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+/* ============ 介面文字 ============ */
+const STRINGS = {
+  zh: {
+    appTitle: "行程規劃", editDays: "編輯天數", backfill: "補齊座標／翻譯",
+    backfilling: "補資料中…", desktopView: "電腦版", mobileView: "手機版",
+    tabItinerary: "行程", tabLogistics: "航班・飯店", tabShopping: "購物清單",
+    departureDate: "出發日期", returnDate: "回程日期", done: "完成",
+    inboxLabel: "待排清單（還沒排定日期）",
+    inboxEmpty: "拖一張卡片到這裡，或用下面的新增功能加入還沒決定哪天去的地點",
+    addToInbox: "新增到待排清單", addItem: "新增項目", inputContent: "輸入內容",
+    dayEmpty: "這天還沒有安排行程", collapseMap: "收合地圖", expandMap: "展開地圖",
+    mapHint: "點左邊日期上方的日期標題，切換地圖內容",
+    edit: "編輯", openInMaps: "在 Google Maps 開啟", delete: "刪除",
+    deleteFlightHotel: "刪除（會一併從航班・飯店移除）",
+    editFlightHotel: "去航班・飯店分頁編輯（含改日期）",
+    flightGroup: "航班", hotelGroup: "飯店", addFlight: "新增航班", addHotel: "新增飯店",
+    save: "儲存",
+    fDate: "日期 YYYY-MM-DD", fTime: "時間", fFlightNo: "航班號", fTerminal: "航廈",
+    fFrom: "出發地", fTo: "目的地", fNote: "備註（去程／回程）", terminalPrefix: " · 航廈 ",
+    hName: "飯店名稱", hAddress: "地址", hCheckin: "入住 YYYY-MM-DD", hCheckinTime: "入住時間 15:00",
+    hCheckout: "退房 YYYY-MM-DD", hCheckoutTime: "退房時間 11:00", hConfirmation: "訂房確認碼（選填）",
+    shoppingAdd: "新增購物項目", checkIn: "入住", checkOut: "退房", flightDefaultTag: "航班",
+    nightlyPrefix: "今晚住宿：", unnamedHotel: "（未命名飯店）",
+    loadingText: "讀取中…",
+    errorText: "連線失敗，請確認 Supabase 網址／金鑰是否正確，或資料表是否已建立。",
+    itemName: "地點名稱", itemNote: "備註",
+  },
+  en: {
+    appTitle: "Itinerary", editDays: "Edit dates", backfill: "Fill coords & translation",
+    backfilling: "Updating…", desktopView: "Desktop", mobileView: "Mobile",
+    tabItinerary: "Itinerary", tabLogistics: "Flights & Hotels", tabShopping: "Shopping List",
+    departureDate: "Start date", returnDate: "End date", done: "Done",
+    inboxLabel: "Unscheduled (no date yet)",
+    inboxEmpty: "Drag a card here, or use Add below for places without a date yet",
+    addToInbox: "Add to unscheduled", addItem: "Add item", inputContent: "Enter text",
+    dayEmpty: "Nothing planned for this day yet", collapseMap: "Hide map", expandMap: "Show map",
+    mapHint: "Click a date header on the left to switch the map",
+    edit: "Edit", openInMaps: "Open in Google Maps", delete: "Delete",
+    deleteFlightHotel: "Delete (also removes it from Flights & Hotels)",
+    editFlightHotel: "Edit in Flights & Hotels (change date there)",
+    flightGroup: "Flights", hotelGroup: "Hotels", addFlight: "Add flight", addHotel: "Add hotel",
+    save: "Save",
+    fDate: "Date YYYY-MM-DD", fTime: "Time", fFlightNo: "Flight no.", fTerminal: "Terminal",
+    fFrom: "From", fTo: "To", fNote: "Note (outbound/return)", terminalPrefix: " · Terminal ",
+    hName: "Hotel name", hAddress: "Address", hCheckin: "Check-in YYYY-MM-DD", hCheckinTime: "Check-in time 15:00",
+    hCheckout: "Check-out YYYY-MM-DD", hCheckoutTime: "Check-out time 11:00", hConfirmation: "Confirmation no. (optional)",
+    shoppingAdd: "Add item", checkIn: "Check-in", checkOut: "Check-out", flightDefaultTag: "Flight",
+    nightlyPrefix: "Staying tonight: ", unnamedHotel: "(Unnamed hotel)",
+    loadingText: "Loading…",
+    errorText: "Connection failed. Please check the Supabase URL/key, or whether the tables exist.",
+    itemName: "Place name", itemNote: "Note",
+  },
+};
 
 /* ============ 小工具 ============ */
 function toDateStr(d) {
@@ -186,10 +241,13 @@ function buildDays(startStr, endStr) {
   if (isNaN(start) || isNaN(end) || start > end) return days;
   const cur = new Date(start);
   while (cur <= end) {
-    days.push({ key: toDateStr(cur), md: `${cur.getMonth() + 1}/${cur.getDate()}`, weekday: WEEKDAY[cur.getDay()] });
+    days.push({ key: toDateStr(cur), md: `${cur.getMonth() + 1}/${cur.getDate()}`, weekdayIndex: cur.getDay() });
     cur.setDate(cur.getDate() + 1);
   }
   return days;
+}
+function weekdayLabel(weekdayIndex, lang) {
+  return lang === "en" ? WEEKDAY_EN[weekdayIndex] : "週" + WEEKDAY_ZH[weekdayIndex];
 }
 function nightsBetween(checkinStr, checkoutStr) {
   const nights = [];
@@ -230,20 +288,21 @@ const flightFromDb = (r) => ({ id: r.id, date: r.date, time: r.time || "", fligh
 const flightToDb = (d) => ({ date: d.date, time: d.time, flight_no: d.flightNo, from_code: d.from, to_code: d.to, terminal: d.terminal, note: d.note });
 const hotelFromDb = (r) => ({ id: r.id, name: r.name || "", address: r.address || "", checkin: r.checkin, checkinTime: r.checkin_time || "", checkout: r.checkout, checkoutTime: r.checkout_time || "", confirmation: r.confirmation || "" });
 const hotelToDb = (d) => ({ name: d.name, address: d.address, checkin: d.checkin, checkin_time: d.checkinTime, checkout: d.checkout, checkout_time: d.checkoutTime, confirmation: d.confirmation });
-const itemFromDb = (r) => ({ id: r.id, day: r.day, time: r.time || "", name: r.name, note: r.note || "", sortOrder: r.sort_order ?? 0, lat: r.lat ?? null, lng: r.lng ?? null });
+const itemFromDb = (r) => ({ id: r.id, day: r.day, time: r.time || "", name: r.name, note: r.note || "", nameEn: r.name_en || "", noteEn: r.note_en || "", sortOrder: r.sort_order ?? 0, lat: r.lat ?? null, lng: r.lng ?? null });
 
 /* ============ 行程卡片 ============ */
-function ItemCard({ item, draggable, onDragStart, onDragEnd, onMapClick, onDelete, isEditing, onEditStart, onEditSave }) {
+function ItemCard({ item, lang, T, draggable, onDragStart, onDragEnd, onMapClick, onDelete, isEditing, onEditStart, onEditSave }) {
   const [draft, setDraft] = useState({ time: item.time, name: item.name, note: item.note });
+  const tt = T || STRINGS.zh;
   if (isEditing) {
     return (
       <div className="card editing">
         <div className="edit-row">
-          <input className="edit-time" value={draft.time} onChange={(e) => setDraft({ ...draft, time: e.target.value })} placeholder="時間" />
+          <input className="edit-time" value={draft.time} onChange={(e) => setDraft({ ...draft, time: e.target.value })} placeholder={tt.fTime} />
           <button className="icon-btn save-btn" onClick={() => onEditSave(item.id, draft)}><Check size={14} /></button>
         </div>
-        <input className="edit-name" value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} placeholder="地點名稱" autoFocus />
-        <input className="edit-note" value={draft.note} onChange={(e) => setDraft({ ...draft, note: e.target.value })} placeholder="備註" />
+        <input className="edit-name" value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} placeholder={tt.itemName} autoFocus />
+        <input className="edit-note" value={draft.note} onChange={(e) => setDraft({ ...draft, note: e.target.value })} placeholder={tt.itemNote} />
       </div>
     );
   }
@@ -253,9 +312,9 @@ function ItemCard({ item, draggable, onDragStart, onDragEnd, onMapClick, onDelet
         {draggable && <GripVertical size={14} className="grip" />}
         {item.mapIndex != null && <span className="map-index-badge">{item.mapIndex}</span>}
         {item.time && <span className="card-time">{item.time}</span>}
-        <button className="icon-btn edit-btn" title="編輯" onClick={() => onEditStart(item.id)}><Pencil size={12} /></button>
-        <button className="icon-btn map-btn" title="在 Google Maps 開啟" onClick={() => onMapClick(item.name)}><MapPin size={13} /></button>
-        <button className="icon-btn del-btn" title="刪除" onClick={() => onDelete(item.id)}><XIcon size={13} /></button>
+        <button className="icon-btn edit-btn" title={tt.edit} onClick={() => onEditStart(item.id)}><Pencil size={12} /></button>
+        <button className="icon-btn map-btn" title={tt.openInMaps} onClick={() => onMapClick(item.name)}><MapPin size={13} /></button>
+        <button className="icon-btn del-btn" title={tt.delete} onClick={() => onDelete(item.id)}><XIcon size={13} /></button>
       </div>
       <div className="card-name">{item.name}</div>
       {item.note && <div className="card-note">{item.note}</div>}
@@ -263,16 +322,17 @@ function ItemCard({ item, draggable, onDragStart, onDragEnd, onMapClick, onDelet
   );
 }
 
-function AutoItemCard({ item, onMapClick, onDelete }) {
+function AutoItemCard({ item, T, onMapClick, onDelete }) {
+  const tt = T || STRINGS.zh;
   const IconC = item.kind === "flight" ? Plane : Building2;
   return (
     <div className="card auto">
       <div className="card-top">
         <span className="card-kind-tag"><IconC size={10} /> {item.tagLabel}</span>
         {item.time && <span className="card-time">{item.time}</span>}
-        <button className="icon-btn edit-btn" title="去航班・飯店分頁編輯（含改日期）" onClick={item.onEdit}><Pencil size={12} /></button>
-        {item.mapQuery && <button className="icon-btn map-btn" title="在 Google Maps 開啟" onClick={() => onMapClick(item.mapQuery)}><MapPin size={13} /></button>}
-        <button className="icon-btn del-btn" title="刪除（會一併從航班・飯店移除）" onClick={item.onDelete}><XIcon size={13} /></button>
+        <button className="icon-btn edit-btn" title={tt.editFlightHotel} onClick={item.onEdit}><Pencil size={12} /></button>
+        {item.mapQuery && <button className="icon-btn map-btn" title={tt.openInMaps} onClick={() => onMapClick(item.mapQuery)}><MapPin size={13} /></button>}
+        <button className="icon-btn del-btn" title={tt.deleteFlightHotel} onClick={item.onDelete}><XIcon size={13} /></button>
       </div>
       <div className="card-name">{item.name}</div>
       {item.note && <div className="card-note">{item.note}</div>}
@@ -280,41 +340,43 @@ function AutoItemCard({ item, onMapClick, onDelete }) {
   );
 }
 
-function NightlyHotelStrip({ hotel, onMapClick }) {
+function NightlyHotelStrip({ hotel, T, onMapClick }) {
+  const tt = T || STRINGS.zh;
   return (
     <div className="night-strip" onClick={() => onMapClick(hotel.address || hotel.name)}>
-      <Building2 size={11} /><span>今晚住宿：{hotel.name || "（未命名飯店）"}</span>
+      <Building2 size={11} /><span>{tt.nightlyPrefix}{hotel.name || tt.unnamedHotel}</span>
     </div>
   );
 }
 
-function AddInline({ onAdd, placeholder }) {
+function AddInline({ onAdd, placeholder, inputPlaceholder }) {
   const [open, setOpen] = useState(false);
   const [val, setVal] = useState("");
-  if (!open) return <button className="add-row" onClick={() => setOpen(true)}><Plus size={13} /> {placeholder || "新增項目"}</button>;
+  if (!open) return <button className="add-row" onClick={() => setOpen(true)}><Plus size={13} /> {placeholder}</button>;
   return (
     <form className="add-form" onSubmit={(e) => { e.preventDefault(); if (val.trim()) onAdd(val.trim()); setVal(""); setOpen(false); }}>
-      <input autoFocus value={val} onChange={(e) => setVal(e.target.value)} placeholder="輸入內容" onBlur={() => { if (!val.trim()) setOpen(false); }} />
+      <input autoFocus value={val} onChange={(e) => setVal(e.target.value)} placeholder={inputPlaceholder} onBlur={() => { if (!val.trim()) setOpen(false); }} />
     </form>
   );
 }
 
 /* ============ 航班／飯店卡片 ============ */
-function FlightCard({ flight, isEditing, onEditStart, onEditSave, onDelete }) {
+function FlightCard({ flight, T, isEditing, onEditStart, onEditSave, onDelete }) {
   const [draft, setDraft] = useState(flight);
+  const tt = T || STRINGS.zh;
   if (isEditing) {
     return (
       <div className="logi-card editing">
         <div className="logi-edit-grid">
-          <input value={draft.date} onChange={(e) => setDraft({ ...draft, date: e.target.value })} placeholder="日期 YYYY-MM-DD" />
-          <input value={draft.time} onChange={(e) => setDraft({ ...draft, time: e.target.value })} placeholder="時間" />
-          <input value={draft.flightNo} onChange={(e) => setDraft({ ...draft, flightNo: e.target.value })} placeholder="航班號" />
-          <input value={draft.terminal} onChange={(e) => setDraft({ ...draft, terminal: e.target.value })} placeholder="航廈" />
-          <input value={draft.from} onChange={(e) => setDraft({ ...draft, from: e.target.value })} placeholder="出發地" />
-          <input value={draft.to} onChange={(e) => setDraft({ ...draft, to: e.target.value })} placeholder="目的地" />
+          <input value={draft.date} onChange={(e) => setDraft({ ...draft, date: e.target.value })} placeholder={tt.fDate} />
+          <input value={draft.time} onChange={(e) => setDraft({ ...draft, time: e.target.value })} placeholder={tt.fTime} />
+          <input value={draft.flightNo} onChange={(e) => setDraft({ ...draft, flightNo: e.target.value })} placeholder={tt.fFlightNo} />
+          <input value={draft.terminal} onChange={(e) => setDraft({ ...draft, terminal: e.target.value })} placeholder={tt.fTerminal} />
+          <input value={draft.from} onChange={(e) => setDraft({ ...draft, from: e.target.value })} placeholder={tt.fFrom} />
+          <input value={draft.to} onChange={(e) => setDraft({ ...draft, to: e.target.value })} placeholder={tt.fTo} />
         </div>
-        <input className="logi-note-input" value={draft.note} onChange={(e) => setDraft({ ...draft, note: e.target.value })} placeholder="備註（去程／回程）" />
-        <button className="icon-btn save-btn logi-save" onClick={() => onEditSave(flight.id, draft)}><Check size={14} /> 儲存</button>
+        <input className="logi-note-input" value={draft.note} onChange={(e) => setDraft({ ...draft, note: e.target.value })} placeholder={tt.fNote} />
+        <button className="icon-btn save-btn logi-save" onClick={() => onEditSave(flight.id, draft)}><Check size={14} /> {tt.save}</button>
       </div>
     );
   }
@@ -324,31 +386,32 @@ function FlightCard({ flight, isEditing, onEditStart, onEditSave, onDelete }) {
       <div className="logi-main">
         <div className="logi-top-row"><span className="logi-date">{fmtMd(flight.date)}</span>{flight.note && <span className="logi-tag">{flight.note}</span>}</div>
         <div className="logi-title">{flight.from} → {flight.to}</div>
-        <div className="logi-sub">{flight.flightNo} · {flight.time}{flight.terminal ? ` · 航廈 ${flight.terminal}` : ""}</div>
+        <div className="logi-sub">{flight.flightNo} · {flight.time}{flight.terminal ? `${tt.terminalPrefix}${flight.terminal}` : ""}</div>
       </div>
       <div className="logi-actions">
-        <button className="icon-btn edit-btn" onClick={() => onEditStart(flight.id)}><Pencil size={12} /></button>
-        <button className="icon-btn del-btn" onClick={() => onDelete(flight.id)}><XIcon size={13} /></button>
+        <button className="icon-btn edit-btn" title={tt.edit} onClick={() => onEditStart(flight.id)}><Pencil size={12} /></button>
+        <button className="icon-btn del-btn" title={tt.delete} onClick={() => onDelete(flight.id)}><XIcon size={13} /></button>
       </div>
     </div>
   );
 }
 
-function HotelCard({ hotel, isEditing, onEditStart, onEditSave, onDelete, onMapClick }) {
+function HotelCard({ hotel, T, isEditing, onEditStart, onEditSave, onDelete, onMapClick }) {
   const [draft, setDraft] = useState(hotel);
+  const tt = T || STRINGS.zh;
   if (isEditing) {
     return (
       <div className="logi-card editing">
-        <input className="logi-note-input" value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} placeholder="飯店名稱" autoFocus />
-        <input className="logi-note-input" value={draft.address} onChange={(e) => setDraft({ ...draft, address: e.target.value })} placeholder="地址" />
+        <input className="logi-note-input" value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} placeholder={tt.hName} autoFocus />
+        <input className="logi-note-input" value={draft.address} onChange={(e) => setDraft({ ...draft, address: e.target.value })} placeholder={tt.hAddress} />
         <div className="logi-edit-grid">
-          <input value={draft.checkin} onChange={(e) => setDraft({ ...draft, checkin: e.target.value })} placeholder="入住 YYYY-MM-DD" />
-          <input value={draft.checkinTime} onChange={(e) => setDraft({ ...draft, checkinTime: e.target.value })} placeholder="入住時間 15:00" />
-          <input value={draft.checkout} onChange={(e) => setDraft({ ...draft, checkout: e.target.value })} placeholder="退房 YYYY-MM-DD" />
-          <input value={draft.checkoutTime} onChange={(e) => setDraft({ ...draft, checkoutTime: e.target.value })} placeholder="退房時間 11:00" />
+          <input value={draft.checkin} onChange={(e) => setDraft({ ...draft, checkin: e.target.value })} placeholder={tt.hCheckin} />
+          <input value={draft.checkinTime} onChange={(e) => setDraft({ ...draft, checkinTime: e.target.value })} placeholder={tt.hCheckinTime} />
+          <input value={draft.checkout} onChange={(e) => setDraft({ ...draft, checkout: e.target.value })} placeholder={tt.hCheckout} />
+          <input value={draft.checkoutTime} onChange={(e) => setDraft({ ...draft, checkoutTime: e.target.value })} placeholder={tt.hCheckoutTime} />
         </div>
-        <input className="logi-note-input" value={draft.confirmation} onChange={(e) => setDraft({ ...draft, confirmation: e.target.value })} placeholder="訂房確認碼（選填）" />
-        <button className="icon-btn save-btn logi-save" onClick={() => onEditSave(hotel.id, draft)}><Check size={14} /> 儲存</button>
+        <input className="logi-note-input" value={draft.confirmation} onChange={(e) => setDraft({ ...draft, confirmation: e.target.value })} placeholder={tt.hConfirmation} />
+        <button className="icon-btn save-btn logi-save" onClick={() => onEditSave(hotel.id, draft)}><Check size={14} /> {tt.save}</button>
       </div>
     );
   }
@@ -361,9 +424,9 @@ function HotelCard({ hotel, isEditing, onEditStart, onEditSave, onDelete, onMapC
         <div className="logi-sub">{hotel.address}</div>
       </div>
       <div className="logi-actions">
-        <button className="icon-btn map-btn" title="在 Google Maps 開啟" onClick={() => onMapClick(hotel.address || hotel.name)}><MapPin size={13} /></button>
-        <button className="icon-btn edit-btn" onClick={() => onEditStart(hotel.id)}><Pencil size={12} /></button>
-        <button className="icon-btn del-btn" onClick={() => onDelete(hotel.id)}><XIcon size={13} /></button>
+        <button className="icon-btn map-btn" title={tt.openInMaps} onClick={() => onMapClick(hotel.address || hotel.name)}><MapPin size={13} /></button>
+        <button className="icon-btn edit-btn" title={tt.edit} onClick={() => onEditStart(hotel.id)}><Pencil size={12} /></button>
+        <button className="icon-btn del-btn" title={tt.delete} onClick={() => onDelete(hotel.id)}><XIcon size={13} /></button>
       </div>
     </div>
   );
@@ -393,6 +456,8 @@ function App() {
 
   const [showSetup, setShowSetup] = useState(false);
   const [section, setSection] = useState("itinerary");
+  const [lang, setLang] = useState("zh");
+  const T = STRINGS[lang];
   const [viewMode, setViewMode] = useState(window.innerWidth < 640 ? "mobile" : "desktop");
   const [activeDayIdx, setActiveDayIdx] = useState(0);
   const [editingId, setEditingId] = useState(null);
@@ -543,17 +608,18 @@ function App() {
     const nightly = [];
     flights.forEach((f) => {
       if (f.date === dayKey) {
-        timed.push({ id: `auto-fl-${f.id}`, kind: "flight", tagLabel: f.note || "航班", time: f.time || "", name: `${f.from || "?"} → ${f.to || "?"}${f.flightNo ? `（${f.flightNo}）` : ""}`, note: f.terminal ? `航廈 ${f.terminal}` : "", mapQuery: null, onDelete: () => handleFlightDelete(f.id), onEdit: () => { setSection("logistics"); setEditingId(f.id); } });
+        timed.push({ id: `auto-fl-${f.id}`, kind: "flight", tagLabel: f.note || T.flightDefaultTag, time: f.time || "", name: `${f.from || "?"} → ${f.to || "?"}${f.flightNo ? `（${f.flightNo}）` : ""}`, note: f.terminal ? `${T.terminalPrefix}${f.terminal}` : "", mapQuery: null, onDelete: () => handleFlightDelete(f.id), onEdit: () => { setSection("logistics"); setEditingId(f.id); } });
       }
     });
     hotels.forEach((h) => {
-      if (h.checkin === dayKey) timed.push({ id: `auto-ht-in-${h.id}`, kind: "hotel", tagLabel: "入住", time: h.checkinTime || "", name: h.name || "（未命名飯店）", note: h.address, mapQuery: h.address || h.name, onDelete: () => handleHotelDelete(h.id), onEdit: () => { setSection("logistics"); setEditingId(h.id); } });
-      if (h.checkout === dayKey) timed.push({ id: `auto-ht-out-${h.id}`, kind: "hotel", tagLabel: "退房", time: h.checkoutTime || "", name: h.name || "（未命名飯店）", note: h.address, mapQuery: h.address || h.name, onDelete: () => handleHotelDelete(h.id), onEdit: () => { setSection("logistics"); setEditingId(h.id); } });
+      if (h.checkin === dayKey) timed.push({ id: `auto-ht-in-${h.id}`, kind: "hotel", tagLabel: T.checkIn, time: h.checkinTime || "", name: h.name || T.unnamedHotel, note: h.address, mapQuery: h.address || h.name, onDelete: () => handleHotelDelete(h.id), onEdit: () => { setSection("logistics"); setEditingId(h.id); } });
+      if (h.checkout === dayKey) timed.push({ id: `auto-ht-out-${h.id}`, kind: "hotel", tagLabel: T.checkOut, time: h.checkoutTime || "", name: h.name || T.unnamedHotel, note: h.address, mapQuery: h.address || h.name, onDelete: () => handleHotelDelete(h.id), onEdit: () => { setSection("logistics"); setEditingId(h.id); } });
       if (nightsBetween(h.checkin, h.checkout).includes(dayKey)) nightly.push(h);
     });
     return { timed, nightly };
   };
 
+  const displayItem = (it) => (lang === "en" ? { ...it, name: it.nameEn || it.name, note: it.noteEn || it.note } : it);
   const getDayCards = (dayKey) => {
     const { timed: autoTimed, nightly } = autoItemsForDay(dayKey);
     let mapCounter = 0;
@@ -561,11 +627,8 @@ function App() {
       .map((it) => ({ ...it, __manual: true }))
       .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
       .map((it) => {
-        if (it.lat != null && it.lng != null) {
-          mapCounter += 1;
-          return { ...it, mapIndex: mapCounter };
-        }
-        return { ...it, mapIndex: null };
+        const withMap = it.lat != null && it.lng != null ? { ...it, mapIndex: (mapCounter += 1) } : { ...it, mapIndex: null };
+        return displayItem(withMap);
       });
     return { auto: autoTimed, manual, nightly };
   };
@@ -693,7 +756,7 @@ function App() {
 
   const [backfillStatus, setBackfillStatus] = useState("");
   const handleBackfillLocations = async () => {
-    setBackfillStatus("補座標中…");
+    setBackfillStatus(T.backfilling);
     try {
       const res = await fetch(EDGE_FUNCTION_URL, {
         method: "POST",
@@ -702,23 +765,23 @@ function App() {
       });
       const data = await res.json();
       if (data.error) {
-        setBackfillStatus("失敗：" + data.error);
+        setBackfillStatus((lang === "en" ? "Failed: " : "失敗：") + data.error);
         return;
       }
-      setBackfillStatus(`已補上 ${data.updated_count} 筆座標`);
+      setBackfillStatus(lang === "en" ? `Updated ${data.updated_count} items` : `已補上 ${data.updated_count} 筆`);
       const { data: itemsData } = await db.from("itinerary_items").select("*").eq("trip_id", tripId);
       if (itemsData) setItems(itemsData.map(itemFromDb));
     } catch (e) {
-      setBackfillStatus("發生錯誤：" + String(e));
+      setBackfillStatus((lang === "en" ? "Error: " : "發生錯誤：") + String(e));
     }
   };
 
-  if (loading) return <div className="loading-screen">讀取中…</div>;
+  if (loading) return <div className="loading-screen">{T.loadingText}</div>;
   if (loadError) {
     return (
       <div className="error-screen">
         <div>
-          <p>連線失敗，請確認 Supabase 網址／金鑰是否正確，或資料表是否已建立。</p>
+          <p>{T.errorText}</p>
           <pre>{String(loadError.message || loadError)}</pre>
         </div>
       </div>
@@ -733,31 +796,37 @@ function App() {
     <div className="wrap">
       <div className="topbar">
         <div className="title">
-          行程規劃
+          {T.appTitle}
           <span className="sub">
             {tripStart.slice(5).replace("-", "/")}–{tripEnd.slice(5).replace("-", "/")}
-            <button onClick={() => setShowSetup((s) => !s)}>編輯天數</button>
-            <button onClick={handleBackfillLocations}>補上經緯度</button>
+            <button onClick={() => setShowSetup((s) => !s)}>{T.editDays}</button>
+            <button onClick={handleBackfillLocations}>{T.backfill}</button>
             {backfillStatus && <span style={{ marginLeft: 6 }}>{backfillStatus}</span>}
           </span>
         </div>
-        <div className="toggle">
-          <button className={!isMobile ? "active" : ""} onClick={() => setViewMode("desktop")}><Monitor size={13} /> 電腦版</button>
-          <button className={isMobile ? "active" : ""} onClick={() => setViewMode("mobile")}><Smartphone size={13} /> 手機版</button>
+        <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+          <div className="toggle">
+            <button className={lang === "zh" ? "active" : ""} onClick={() => setLang("zh")}>中文</button>
+            <button className={lang === "en" ? "active" : ""} onClick={() => setLang("en")}>EN</button>
+          </div>
+          <div className="toggle">
+            <button className={!isMobile ? "active" : ""} onClick={() => setViewMode("desktop")}><Monitor size={13} /> {T.desktopView}</button>
+            <button className={isMobile ? "active" : ""} onClick={() => setViewMode("mobile")}><Smartphone size={13} /> {T.mobileView}</button>
+          </div>
         </div>
       </div>
 
       <div className="section-tabs">
-        <button className={`section-tab ${section === "itinerary" ? "active" : ""}`} onClick={() => setSection("itinerary")}><ListChecks size={13} /> 行程</button>
-        <button className={`section-tab ${section === "logistics" ? "active" : ""}`} onClick={() => setSection("logistics")}><Plane size={13} /> 航班・飯店</button>
-        <button className={`section-tab ${section === "shopping" ? "active" : ""}`} onClick={() => setSection("shopping")}><ShoppingBag size={13} /> 購物清單</button>
+        <button className={`section-tab ${section === "itinerary" ? "active" : ""}`} onClick={() => setSection("itinerary")}><ListChecks size={13} /> {T.tabItinerary}</button>
+        <button className={`section-tab ${section === "logistics" ? "active" : ""}`} onClick={() => setSection("logistics")}><Plane size={13} /> {T.tabLogistics}</button>
+        <button className={`section-tab ${section === "shopping" ? "active" : ""}`} onClick={() => setSection("shopping")}><ShoppingBag size={13} /> {T.tabShopping}</button>
       </div>
 
       {showSetup && section === "itinerary" && (
         <div className="setup-panel">
-          <div className="setup-field"><label>出發日期</label><input type="date" value={tripStart} onChange={(e) => handleTripStartChange(e.target.value)} /></div>
-          <div className="setup-field"><label>回程日期</label><input type="date" value={tripEnd} onChange={(e) => handleTripEndChange(e.target.value)} /></div>
-          <button className="setup-close" onClick={() => setShowSetup(false)}>完成</button>
+          <div className="setup-field"><label>{T.departureDate}</label><input type="date" value={tripStart} onChange={(e) => handleTripStartChange(e.target.value)} /></div>
+          <div className="setup-field"><label>{T.returnDate}</label><input type="date" value={tripEnd} onChange={(e) => handleTripEndChange(e.target.value)} /></div>
+          <button className="setup-close" onClick={() => setShowSetup(false)}>{T.done}</button>
         </div>
       )}
 
@@ -767,15 +836,17 @@ function App() {
           onDragOver={(e) => e.preventDefault()}
           onDrop={(e) => handleDropOnDay(e, null)}
         >
-          <div className="inbox-label"><ListChecks size={13} /> 待排清單（還沒排定日期）</div>
+          <div className="inbox-label"><ListChecks size={13} /> {T.inboxLabel}</div>
           {inboxItems.length === 0 ? (
-            <div className="inbox-empty">拖一張卡片到這裡，或用下面的新增功能加入還沒決定哪天去的地點</div>
+            <div className="inbox-empty">{T.inboxEmpty}</div>
           ) : (
             <div className="inbox-row" ref={inboxListRef} data-day="">
               {inboxItems.map((it) => (
                 <div key={it.id} className="inbox-card-wrap" data-item-id={it.id} onDragOver={(e) => e.preventDefault()} onDrop={(e) => handleDropBeforeCard(e, null, it.id)}>
                   <ItemCard
-                    item={it}
+                    item={displayItem(it)}
+                    lang={lang}
+                    T={T}
                     draggable={editingId !== it.id}
                     onDragStart={handleDragStart}
                     onDragEnd={handleDragEnd}
@@ -790,7 +861,7 @@ function App() {
             </div>
           )}
           <div style={{ marginTop: 8 }}>
-            <AddInline onAdd={handleAddInbox} placeholder="新增到待排清單" />
+            <AddInline onAdd={handleAddInbox} placeholder={T.addToInbox} inputPlaceholder={T.inputContent} />
           </div>
         </div>
       )}
@@ -799,7 +870,7 @@ function App() {
         !isMobile ? (
           <div className="desktop-grid-wrap">
             <div className={`map-tab ${mapOpen ? "open" : ""}`} onClick={() => setMapOpen((o) => !o)}>
-              {mapOpen ? "收合地圖" : "展開地圖"}
+              {mapOpen ? T.collapseMap : T.expandMap}
             </div>
             <div className="grid-nav">
               <button onClick={() => desktopGridRef.current?.scrollBy({ left: -220, behavior: "smooth" })}>‹</button>
@@ -808,28 +879,28 @@ function App() {
             {mapOpen && (
               <div className="map-panel">
                 <div className="map-panel-head">
-                  <span className="md">{days[mapDayIdx] ? `${days[mapDayIdx].md} 週${days[mapDayIdx].weekday}` : ""}</span>
+                  <span className="md">{days[mapDayIdx] ? `${days[mapDayIdx].md} ${weekdayLabel(days[mapDayIdx].weekdayIndex, lang)}` : ""}</span>
                   <button className="map-panel-close" onClick={() => setMapOpen(false)}><XIcon size={15} /></button>
                 </div>
                 <div ref={mapDivRef} className="map-canvas-el"></div>
-                <div className="map-hint">點左邊日期上方的日期標題，切換地圖內容</div>
+                <div className="map-hint">{T.mapHint}</div>
               </div>
             )}
             <div className="desktop-grid" ref={desktopGridRef}>
               {days.map((d, dayIdx) => (
                 <div key={d.key} className="day-col" onDragOver={(e) => e.preventDefault()} onDrop={(e) => handleDropOnDay(e, d.key)}>
-                  <div className="day-head" onClick={() => setMapDayIdx(dayIdx)}><span className="md">{d.md}</span><span className="wd">週{d.weekday}</span></div>
+                  <div className="day-head" onClick={() => setMapDayIdx(dayIdx)}><span className="md">{d.md}</span><span className="wd">{weekdayLabel(d.weekdayIndex, lang)}</span></div>
                   <div className="day-body">
                     {getDayCards(d.key).auto.map((it) => (
-                      <AutoItemCard key={it.id} item={it} onMapClick={handleMapClick} />
+                      <AutoItemCard key={it.id} item={it} T={T} onMapClick={handleMapClick} />
                     ))}
                     {getDayCards(d.key).manual.map((it) => (
                       <div key={it.id} onDragOver={(e) => e.preventDefault()} onDrop={(e) => handleDropBeforeCard(e, d.key, it.id)}>
-                        <ItemCard item={it} draggable={editingId !== it.id} onDragStart={handleDragStart} onDragEnd={handleDragEnd} onMapClick={handleMapClick} onDelete={handleDelete} isEditing={editingId === it.id} onEditStart={setEditingId} onEditSave={handleEditSave} />
+                        <ItemCard item={it} lang={lang} T={T} draggable={editingId !== it.id} onDragStart={handleDragStart} onDragEnd={handleDragEnd} onMapClick={handleMapClick} onDelete={handleDelete} isEditing={editingId === it.id} onEditStart={setEditingId} onEditSave={handleEditSave} />
                       </div>
                     ))}
-                    <AddInline onAdd={(name) => handleAdd(d.key, name)} />
-                    {getDayCards(d.key).nightly.map((h) => <NightlyHotelStrip key={`night-${h.id}-${d.key}`} hotel={h} onMapClick={handleMapClick} />)}
+                    <AddInline onAdd={(name) => handleAdd(d.key, name)} placeholder={T.addItem} inputPlaceholder={T.inputContent} />
+                    {getDayCards(d.key).nightly.map((h) => <NightlyHotelStrip key={`night-${h.id}-${d.key}`} hotel={h} T={T} onMapClick={handleMapClick} />)}
                   </div>
                 </div>
               ))}
@@ -840,22 +911,22 @@ function App() {
             <div className="day-tabs">
               {days.map((d, i) => (
                 <div key={d.key} className={`day-tab ${i === activeDayIdx ? "active" : ""}`} onClick={() => setActiveDayIdx(i)}>
-                  <div className="md">{d.md}</div><div className="wd">週{d.weekday}</div>
+                  <div className="md">{d.md}</div><div className="wd">{weekdayLabel(d.weekdayIndex, lang)}</div>
                 </div>
               ))}
             </div>
             {activeDay && getDayCards(activeDay.key).auto.map((it) => (
-              <AutoItemCard key={it.id} item={it} onMapClick={handleMapClick} />
+              <AutoItemCard key={it.id} item={it} T={T} onMapClick={handleMapClick} />
             ))}
             <div className="mobile-list" ref={dayListRef} data-day={activeDay ? activeDay.key : ""}>
-              {activeDay && getDayCards(activeDay.key).manual.length === 0 && <div className="empty-note sortable-ignore">這天還沒有安排行程</div>}
+              {activeDay && getDayCards(activeDay.key).manual.length === 0 && <div className="empty-note sortable-ignore">{T.dayEmpty}</div>}
               {activeDay && getDayCards(activeDay.key).manual.map((it) => (
                 <div key={it.id} data-item-id={it.id}>
-                  <ItemCard item={it} draggable onDragStart={handleDragStart} onDragEnd={handleDragEnd} onMapClick={handleMapClick} onDelete={handleDelete} isEditing={editingId === it.id} onEditStart={setEditingId} onEditSave={handleEditSave} />
+                  <ItemCard item={it} lang={lang} T={T} draggable onDragStart={handleDragStart} onDragEnd={handleDragEnd} onMapClick={handleMapClick} onDelete={handleDelete} isEditing={editingId === it.id} onEditStart={setEditingId} onEditSave={handleEditSave} />
                 </div>
               ))}
-              {activeDay && <div className="sortable-ignore"><AddInline onAdd={(name) => handleAdd(activeDay.key, name)} /></div>}
-              {activeDay && getDayCards(activeDay.key).nightly.map((h) => <div key={`night-${h.id}-${activeDay.key}`} className="sortable-ignore"><NightlyHotelStrip hotel={h} onMapClick={handleMapClick} /></div>)}
+              {activeDay && <div className="sortable-ignore"><AddInline onAdd={(name) => handleAdd(activeDay.key, name)} placeholder={T.addItem} inputPlaceholder={T.inputContent} /></div>}
+              {activeDay && getDayCards(activeDay.key).nightly.map((h) => <div key={`night-${h.id}-${activeDay.key}`} className="sortable-ignore"><NightlyHotelStrip hotel={h} T={T} onMapClick={handleMapClick} /></div>)}
             </div>
           </div>
         )
@@ -865,17 +936,17 @@ function App() {
         <div className={isMobile ? "mobile-wrap" : ""}>
           <div className="logi-section">
             <div>
-              <div className="logi-group-label">航班</div>
+              <div className="logi-group-label">{T.flightGroup}</div>
               <div className="logi-list">
-                {flights.map((f) => <FlightCard key={f.id} flight={f} isEditing={editingId === f.id} onEditStart={setEditingId} onEditSave={handleFlightSave} onDelete={handleFlightDelete} />)}
-                <button className="logi-add" onClick={handleAddFlight}><Plus size={13} /> 新增航班</button>
+                {flights.map((f) => <FlightCard key={f.id} flight={f} T={T} isEditing={editingId === f.id} onEditStart={setEditingId} onEditSave={handleFlightSave} onDelete={handleFlightDelete} />)}
+                <button className="logi-add" onClick={handleAddFlight}><Plus size={13} /> {T.addFlight}</button>
               </div>
             </div>
             <div>
-              <div className="logi-group-label">飯店</div>
+              <div className="logi-group-label">{T.hotelGroup}</div>
               <div className="logi-list">
-                {hotels.map((h) => <HotelCard key={h.id} hotel={h} isEditing={editingId === h.id} onEditStart={setEditingId} onEditSave={handleHotelSave} onDelete={handleHotelDelete} onMapClick={handleMapClick} />)}
-                <button className="logi-add" onClick={handleAddHotel}><Plus size={13} /> 新增飯店</button>
+                {hotels.map((h) => <HotelCard key={h.id} hotel={h} T={T} isEditing={editingId === h.id} onEditStart={setEditingId} onEditSave={handleHotelSave} onDelete={handleHotelDelete} onMapClick={handleMapClick} />)}
+                <button className="logi-add" onClick={handleAddHotel}><Plus size={13} /> {T.addHotel}</button>
               </div>
             </div>
           </div>
@@ -884,9 +955,9 @@ function App() {
 
       {section === "shopping" && (
         <div className={isMobile ? "mobile-wrap" : "shop-section"}>
-          <div className="shop-progress">已完成 {shoppingDone} / {shopping.length}</div>
-          <div className="shop-list">{shopping.map((s) => <ShoppingRow key={s.id} item={s} onToggle={handleToggleShopping} onDelete={handleDeleteShopping} />)}</div>
-          <AddInline onAdd={handleAddShopping} placeholder="新增購物項目" />
+          <div className="shop-progress">{lang === "en" ? `${shoppingDone} / ${shopping.length} done` : `已完成 ${shoppingDone} / ${shopping.length}`}</div>
+          <div className="shop-list">{shopping.map((s) => <ShoppingRow key={s.id} item={s} T={T} onToggle={handleToggleShopping} onDelete={handleDeleteShopping} />)}</div>
+          <AddInline onAdd={handleAddShopping} placeholder={T.shoppingAdd} inputPlaceholder={T.inputContent} />
         </div>
       )}
     </div>

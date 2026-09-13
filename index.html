@@ -145,6 +145,21 @@
   .map-panel-close { border: none; background: transparent; color: #B7BDA0; cursor: pointer; padding: 4px; }
   .map-canvas-el { width: 100%; flex: 1; min-height: 320px; border-radius: 8px; background: #4A5140; }
   .map-hint { font-size: 10.5px; color: #9BA184; text-align: center; margin-top: 6px; }
+  .mobile-map-fab { position: fixed; right: 16px; bottom: 16px; width: 52px; height: 52px; border-radius: 50%; background: #33392A; display: flex; align-items: center; justify-content: center; box-shadow: 0 3px 10px rgba(51,57,42,0.35); z-index: 30; border: none; cursor: pointer; }
+  .mobile-map-overlay { position: fixed; inset: 0; background: #D8DEC4; z-index: 100; display: flex; flex-direction: column; }
+  .mobile-map-close { position: absolute; top: 14px; left: 14px; width: 36px; height: 36px; border-radius: 50%; background: rgba(51,57,42,0.75); color: #D8DEC4; display: flex; align-items: center; justify-content: center; z-index: 5; border: none; cursor: pointer; }
+  .mobile-map-canvas-wrap { flex: 1; min-height: 0; }
+  .mobile-map-canvas-wrap .map-canvas-el { height: 100%; border-radius: 0; min-height: 0; }
+  .mobile-map-bottom { background: #F2F0E2; border-top: 1px solid #C7C09E; padding: 10px 12px 16px; }
+  .mobile-map-days { display: flex; gap: 6px; overflow-x: auto; margin-bottom: 8px; }
+  .mobile-map-days::-webkit-scrollbar { display: none; }
+  .mobile-map-mini-list { display: flex; gap: 8px; overflow-x: auto; }
+  .mobile-map-mini-list::-webkit-scrollbar { display: none; }
+  .mobile-map-mini-card { flex: 0 0 auto; background: #fff; border: 1px solid #D8D2AC; border-radius: 8px; padding: 8px 10px; display: flex; align-items: center; gap: 8px; cursor: pointer; max-width: 220px; }
+  .mobile-map-mini-num { width: 18px; height: 18px; border-radius: 50%; background: #C1524A; color: #fff; font-size: 10px; display: flex; align-items: center; justify-content: center; flex: none; }
+  .mobile-map-mini-name { font-size: 12.5px; color: #33392A; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .mobile-map-mini-time { font-size: 10.5px; color: #807A54; flex: none; }
+  .mobile-map-empty { font-size: 12px; color: #8F8964; padding: 6px 2px; }
   .grid-nav { display: inline-flex; gap: 8px; margin-bottom: 8px; }
   .grid-nav button { width: 30px; height: 30px; border-radius: 50%; border: 1px solid #C7C09E; background: #F2F0E2; color: #33392A; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(51,57,42,0.12); }
   .grid-nav button:hover { background: #E7E2C7; }
@@ -568,6 +583,9 @@ function App() {
     if (!day) return;
     const points = manualListFor(day.key).filter((it) => it.lat != null && it.lng != null);
 
+    if (mapObjRef.current && mapObjRef.current.getDiv() !== mapDivRef.current) {
+      mapObjRef.current = null;
+    }
     if (!mapObjRef.current) {
       mapObjRef.current = new google.maps.Map(mapDivRef.current, {
         center: points[0] ? { lat: points[0].lat, lng: points[0].lng } : { lat: 35.681236, lng: 139.767125 },
@@ -610,7 +628,7 @@ function App() {
     } else {
       google.maps.event.trigger(map, "resize");
     }
-  }, [mapOpen, mapDayIdx, items, days]);
+  }, [mapOpen, mapDayIdx, items, days, viewMode]);
 
   const itemsForDay = (dayKey) => items.filter((it) => it.day === dayKey);
   const inboxItems = items.filter((it) => !it.day).sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
@@ -803,6 +821,14 @@ function App() {
   const activeDay = days[Math.min(activeDayIdx, Math.max(days.length - 1, 0))];
   const isMobile = viewMode === "mobile";
   const shoppingDone = shopping.filter((s) => s.checked).length;
+  const mapDay = days[mapDayIdx];
+  const mapPoints = mapDay ? getDayCards(mapDay.key).manual.filter((it) => it.lat != null && it.lng != null) : [];
+  const panMapTo = (pt) => {
+    if (mapObjRef.current) {
+      mapObjRef.current.panTo({ lat: pt.lat, lng: pt.lng });
+      mapObjRef.current.setZoom(16);
+    }
+  };
 
   return (
     <div className="wrap">
@@ -919,28 +945,65 @@ function App() {
             </div>
           </div>
         ) : (
-          <div className="mobile-wrap">
-            <div className="day-tabs">
-              {days.map((d, i) => (
-                <div key={d.key} className={`day-tab ${i === activeDayIdx ? "active" : ""}`} onClick={() => setActiveDayIdx(i)}>
-                  <div className="md">{d.md}</div><div className="wd">{weekdayLabel(d.weekdayIndex, lang)}</div>
-                </div>
+          <React.Fragment>
+            <div className="mobile-wrap">
+              <div className="day-tabs">
+                {days.map((d, i) => (
+                  <div key={d.key} className={`day-tab ${i === activeDayIdx ? "active" : ""}`} onClick={() => setActiveDayIdx(i)}>
+                    <div className="md">{d.md}</div><div className="wd">{weekdayLabel(d.weekdayIndex, lang)}</div>
+                  </div>
+                ))}
+              </div>
+              {activeDay && getDayCards(activeDay.key).auto.map((it) => (
+                <AutoItemCard key={it.id} item={it} T={T} onMapClick={handleMapClick} />
               ))}
+              <div className="mobile-list" ref={dayListRef} data-day={activeDay ? activeDay.key : ""}>
+                {activeDay && getDayCards(activeDay.key).manual.length === 0 && <div className="empty-note sortable-ignore">{T.dayEmpty}</div>}
+                {activeDay && getDayCards(activeDay.key).manual.map((it) => (
+                  <div key={it.id} data-item-id={it.id}>
+                    <ItemCard item={it} lang={lang} T={T} draggable onDragStart={handleDragStart} onDragEnd={handleDragEnd} onMapClick={handleMapClick} onDelete={handleDelete} isEditing={editingId === it.id} onEditStart={setEditingId} onEditSave={handleEditSave} />
+                  </div>
+                ))}
+                {activeDay && <div className="sortable-ignore"><AddInline onAdd={(name) => handleAdd(activeDay.key, name)} placeholder={T.addItem} inputPlaceholder={T.inputContent} /></div>}
+                {activeDay && getDayCards(activeDay.key).nightly.map((h) => <div key={`night-${h.id}-${activeDay.key}`} className="sortable-ignore"><NightlyHotelStrip hotel={h} T={T} onMapClick={handleMapClick} /></div>)}
+              </div>
             </div>
-            {activeDay && getDayCards(activeDay.key).auto.map((it) => (
-              <AutoItemCard key={it.id} item={it} T={T} onMapClick={handleMapClick} />
-            ))}
-            <div className="mobile-list" ref={dayListRef} data-day={activeDay ? activeDay.key : ""}>
-              {activeDay && getDayCards(activeDay.key).manual.length === 0 && <div className="empty-note sortable-ignore">{T.dayEmpty}</div>}
-              {activeDay && getDayCards(activeDay.key).manual.map((it) => (
-                <div key={it.id} data-item-id={it.id}>
-                  <ItemCard item={it} lang={lang} T={T} draggable onDragStart={handleDragStart} onDragEnd={handleDragEnd} onMapClick={handleMapClick} onDelete={handleDelete} isEditing={editingId === it.id} onEditStart={setEditingId} onEditSave={handleEditSave} />
+
+            <button className="mobile-map-fab" onClick={() => setMapOpen(true)} aria-label={T.expandMap}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#D8DEC4" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 20l-5.447-2.724A1 1 0 0 1 3 16.382V5.618a1 1 0 0 1 1.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0 0 21 18.382V7.618a1 1 0 0 0-.553-.894L15 4m0 13V4m0 0L9 7" /></svg>
+            </button>
+
+            {mapOpen && (
+              <div className="mobile-map-overlay">
+                <button className="mobile-map-close" onClick={() => setMapOpen(false)} aria-label={T.collapseMap}><XIcon size={18} /></button>
+                <div className="mobile-map-canvas-wrap">
+                  <div ref={mapDivRef} className="map-canvas-el"></div>
                 </div>
-              ))}
-              {activeDay && <div className="sortable-ignore"><AddInline onAdd={(name) => handleAdd(activeDay.key, name)} placeholder={T.addItem} inputPlaceholder={T.inputContent} /></div>}
-              {activeDay && getDayCards(activeDay.key).nightly.map((h) => <div key={`night-${h.id}-${activeDay.key}`} className="sortable-ignore"><NightlyHotelStrip hotel={h} T={T} onMapClick={handleMapClick} /></div>)}
-            </div>
-          </div>
+                <div className="mobile-map-bottom">
+                  <div className="mobile-map-days">
+                    {days.map((d, i) => (
+                      <div key={d.key} className={`day-tab ${i === mapDayIdx ? "active" : ""}`} onClick={() => setMapDayIdx(i)}>
+                        <div className="md">{d.md}</div><div className="wd">{weekdayLabel(d.weekdayIndex, lang)}</div>
+                      </div>
+                    ))}
+                  </div>
+                  {mapPoints.length === 0 ? (
+                    <div className="mobile-map-empty">{T.mapHint}</div>
+                  ) : (
+                    <div className="mobile-map-mini-list">
+                      {mapPoints.map((pt) => (
+                        <div key={pt.id} className="mobile-map-mini-card" onClick={() => panMapTo(pt)}>
+                          <div className="mobile-map-mini-num">{pt.mapIndex}</div>
+                          <div className="mobile-map-mini-name">{pt.name}</div>
+                          {pt.time && <div className="mobile-map-mini-time">{pt.time}</div>}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </React.Fragment>
         )
       )}
 

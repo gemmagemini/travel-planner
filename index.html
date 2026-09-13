@@ -60,8 +60,9 @@
   .day-head .wd { font-size: 11.5px; color: #807A54; }
   .day-body { padding: 8px; display: flex; flex-direction: column; gap: 8px; }
 
-  .card { background: #fff; border: 1px solid #D8D2AC; border-radius: 8px; padding: 8px 9px 9px; cursor: grab; }
+  .card { background: #fff; border: 1px solid #D8D2AC; border-radius: 8px; padding: 8px 9px 9px; cursor: pointer; }
   .card:active { cursor: grabbing; }
+  .card.important { background: #FBF0D9; border-color: #E0A93A; }
   .card.editing { cursor: default; border-color: #C1524A; }
   .card.auto { background: #F7F4E8; border-style: dashed; cursor: default; }
   .card-kind-tag { display: flex; align-items: center; gap: 3px; font-size: 9.5px; background: #E4DEC0; color: #5C5A40; padding: 2px 6px; border-radius: 4px; }
@@ -74,8 +75,6 @@
   .toggle-badge { width: 17px; height: 17px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; flex: none; }
   .book-badge { border: 1.5px solid #D8D2AC; color: #D8D2AC; }
   .book-badge.on { border-color: #5C8A5F; background: #5C8A5F; color: #fff; }
-  .important-badge { border: 1.5px solid #D8D2AC; color: #D8D2AC; }
-  .important-badge.on { border-color: #E0A93A; background: #E0A93A; color: #fff; }
   .card.transit { border-style: dashed; border-color: #A9C7C4; background: #F0F5F0; }
   .transit-icon { color: #5C8A5F; flex: none; }
   .icon-btn { border: none; background: transparent; color: #A8A17E; cursor: pointer; padding: 2px; display: flex; align-items: center; gap: 4px; border-radius: 4px; }
@@ -345,17 +344,22 @@ function ItemCard({ item, lang, T, draggable, onDragStart, onDragEnd, onMapClick
     );
   }
   return (
-    <div className={`card ${item.isTransit ? "transit" : ""}`} draggable={draggable} onDragStart={draggable ? (e) => onDragStart(e, item.id) : undefined} onDragEnd={draggable ? onDragEnd : undefined}>
+    <div
+      className={`card ${item.isTransit ? "transit" : ""} ${item.important ? "important" : ""}`}
+      draggable={draggable}
+      onDragStart={draggable ? (e) => onDragStart(e, item.id) : undefined}
+      onDragEnd={draggable ? onDragEnd : undefined}
+      onClick={() => onToggleImportant(item.id)}
+    >
       <div className="card-top">
         {draggable && <GripVertical size={14} className="grip" />}
         {item.isTransit && <Bus size={14} className="transit-icon" />}
         {item.mapIndex != null && <span className="map-index-badge">{item.mapIndex}</span>}
         {item.time && <span className="card-time">{item.time}</span>}
-        <span className={`toggle-badge book-badge ${item.booked ? "on" : ""}`} title={tt.booked} onClick={() => onToggleBooked(item.id)}><Check size={11} /></span>
-        <span className={`toggle-badge important-badge ${item.important ? "on" : ""}`} title={tt.important} onClick={() => onToggleImportant(item.id)}><Star size={11} /></span>
-        <button className="icon-btn edit-btn" title={tt.edit} onClick={() => onEditStart(item.id)}><Pencil size={12} /></button>
-        {!item.isTransit && <button className="icon-btn map-btn" title={tt.openInMaps} onClick={() => onMapClick(item.name)}><MapPin size={13} /></button>}
-        <button className="icon-btn del-btn" title={tt.delete} onClick={() => onDelete(item.id)}><XIcon size={13} /></button>
+        <span className={`toggle-badge book-badge ${item.booked ? "on" : ""}`} title={tt.booked} onClick={(e) => { e.stopPropagation(); onToggleBooked(item.id); }}><Check size={11} /></span>
+        <button className="icon-btn edit-btn" title={tt.edit} onClick={(e) => { e.stopPropagation(); onEditStart(item.id); }}><Pencil size={12} /></button>
+        {!item.isTransit && <button className="icon-btn map-btn" title={tt.openInMaps} onClick={(e) => { e.stopPropagation(); onMapClick(item.name); }}><MapPin size={13} /></button>}
+        <button className="icon-btn del-btn" title={tt.delete} onClick={(e) => { e.stopPropagation(); onDelete(item.id); }}><XIcon size={13} /></button>
       </div>
       <div className="card-name">{item.name}</div>
       {item.note && <div className="card-note">{item.note}</div>}

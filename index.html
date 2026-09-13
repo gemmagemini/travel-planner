@@ -72,10 +72,10 @@
   .card-time { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #C1524A; background: #F3DAD6; padding: 1px 5px; border-radius: 4px; }
   .map-index-badge { width: 16px; height: 16px; border-radius: 50%; background: #C1524A; color: #fff; font-size: 9.5px; display: flex; align-items: center; justify-content: center; flex: none; }
   .toggle-badge { width: 17px; height: 17px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; flex: none; }
-  .book-badge { border: 1.5px solid #5C8A5F; color: #5C8A5F; }
-  .book-badge.on { background: #5C8A5F; color: #fff; }
-  .important-badge { border: 1.5px solid #E0A93A; color: #E0A93A; }
-  .important-badge.on { background: #E0A93A; color: #fff; }
+  .book-badge { border: 1.5px solid #D8D2AC; color: #D8D2AC; }
+  .book-badge.on { border-color: #5C8A5F; background: #5C8A5F; color: #fff; }
+  .important-badge { border: 1.5px solid #D8D2AC; color: #D8D2AC; }
+  .important-badge.on { border-color: #E0A93A; background: #E0A93A; color: #fff; }
   .card.transit { border-style: dashed; border-color: #A9C7C4; background: #F0F5F0; }
   .transit-icon { color: #5C8A5F; flex: none; }
   .icon-btn { border: none; background: transparent; color: #A8A17E; cursor: pointer; padding: 2px; display: flex; align-items: center; gap: 4px; border-radius: 4px; }
@@ -519,7 +519,7 @@ function App() {
       animation: 150,
       ghostClass: "drag-over",
       filter: ".sortable-ignore",
-      preventOnFilter: true,
+      preventOnFilter: false,
       delay: 150,
       delayOnTouchOnly: true,
       touchStartThreshold: 5,

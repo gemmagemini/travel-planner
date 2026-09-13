@@ -56,17 +56,20 @@
   .desktop-grid { display: flex; align-items: flex-start; gap: 14px; overflow-x: auto; padding-bottom: 10px; scrollbar-width: none; -ms-overflow-style: none; }
   .desktop-grid::-webkit-scrollbar { display: none; }
   .day-col { flex: 0 0 190px; background: transparent; border: none; display: flex; flex-direction: column; }
-  .day-head { padding: 4px 2px 12px; border-bottom: none; display: flex; align-items: baseline; gap: 8px; }
+  .day-head { padding: 4px 2px 6px; border-bottom: none; display: flex; align-items: baseline; gap: 8px; }
   .day-head .md { font-family: 'Fraunces', serif; font-size: 19px; font-weight: 600; }
   .day-head .wd { font-size: 11.5px; color: #8C8A7C; }
+  .day-head-line { border-bottom: 2px solid #1E1E1C; width: 36px; margin: 0 0 12px 2px; }
+  .inbox-label { font-family: 'Fraunces', serif; font-size: 13.5px; font-weight: 600; color: #1E1E1C; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+  .inbox-label-line { border-bottom: 1px solid #D3D8BC; margin-bottom: 12px; }
   .day-body { padding: 8px; display: flex; flex-direction: column; gap: 8px; }
 
   .card { background: #fff; border: none; border-radius: 16px; padding: 13px 14px 14px; cursor: pointer; box-shadow: 0 1px 3px rgba(30,30,28,0.06), 0 4px 14px rgba(30,30,28,0.05); }
   .card:active { cursor: grabbing; }
   .card.important { background: #FFF3D6; }
   .card.editing { cursor: default; border-color: #D97706; }
-  .card.auto { background: #EDEFE0; border-style: dashed; cursor: default; }
-  .card-kind-tag { display: flex; align-items: center; gap: 3px; font-size: 9.5px; background: #E1E3CE; color: #4E5145; padding: 2px 6px; border-radius: 4px; }
+  .card.auto { background: #F1F3E8; border: 1.5px dashed #C9CDB0; cursor: default; }
+  .card-kind-tag { display: flex; align-items: center; gap: 3px; font-size: 10.5px; background: #FDECC8; color: #D97706; padding: 3px 9px; border-radius: 20px; }
   .night-strip { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #4E5145; padding-top: 6px; margin-top: 2px; border-top: none; cursor: pointer; }
   .night-strip:hover { color: #1E1E1C; }
   .card-top { display: flex; align-items: center; gap: 6px; margin-bottom: 3px; }
@@ -181,7 +184,6 @@
   .day-col.map-selected .add-row:hover { color: #FCD34D; border-color: #FCD34D; }
   .day-col.map-selected .night-strip { color: #A3C2B3; border-top-color: #1D3A32; }
   .day-col.map-selected .night-strip:hover { color: #E9EADE; }
-  .inbox-label { font-family: 'Fraunces', serif; font-size: 13.5px; font-weight: 600; color: #1E1E1C; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
   .inbox-row { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; -ms-overflow-style: none; }
   .inbox-row::-webkit-scrollbar { display: none; }
   .inbox-empty { font-size: 11.5px; color: #7C7F6D; padding: 4px 2px; }
@@ -921,6 +923,7 @@ function App() {
           onDrop={(e) => handleDropOnDay(e, null)}
         >
           <div className="inbox-label"><ListChecks size={13} /> {T.inboxLabel}</div>
+          <div className="inbox-label-line"></div>
           {inboxItems.length === 0 ? (
             <div className="inbox-empty">{T.inboxEmpty}</div>
           ) : (
@@ -964,6 +967,7 @@ function App() {
                   {days.map((d, dayIdx) => (
                     <div key={d.key} className={`day-col ${mapOpen && dayIdx === mapDayIdx ? "map-selected" : ""}`} onDragOver={(e) => e.preventDefault()} onDrop={(e) => handleDropOnDay(e, d.key)}>
                       <div className="day-head" onClick={() => setMapDayIdx(dayIdx)}><span className="md">{d.md}</span><span className="wd">{weekdayLabel(d.weekdayIndex, lang)}</span></div>
+                      <div className="day-head-line"></div>
                       <div className="day-body">
                         {getDayCards(d.key).auto.map((it) => (
                           <AutoItemCard key={it.id} item={it} T={T} onMapClick={handleMapClick} />

@@ -71,6 +71,13 @@
   .grip { color: #A8A17E; padding: 8px; margin: -8px; }
   .card-time { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #C1524A; background: #F3DAD6; padding: 1px 5px; border-radius: 4px; }
   .map-index-badge { width: 16px; height: 16px; border-radius: 50%; background: #C1524A; color: #fff; font-size: 9.5px; display: flex; align-items: center; justify-content: center; flex: none; }
+  .toggle-badge { width: 17px; height: 17px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; flex: none; }
+  .book-badge { border: 1.5px solid #5C8A5F; color: #5C8A5F; }
+  .book-badge.on { background: #5C8A5F; color: #fff; }
+  .important-badge { border: 1.5px solid #E0A93A; color: #E0A93A; }
+  .important-badge.on { background: #E0A93A; color: #fff; }
+  .card.transit { border-style: dashed; border-color: #A9C7C4; background: #F0F5F0; }
+  .transit-icon { color: #5C8A5F; flex: none; }
   .icon-btn { border: none; background: transparent; color: #A8A17E; cursor: pointer; padding: 2px; display: flex; align-items: center; gap: 4px; border-radius: 4px; }
   .icon-btn:hover { background: #E7E2C7; color: #33392A; }
   .edit-btn { margin-left: auto; }
@@ -226,6 +233,7 @@ const STRINGS = {
     loadingText: "讀取中…",
     errorText: "連線失敗，請確認 Supabase 網址／金鑰是否正確，或資料表是否已建立。",
     itemName: "地點名稱", itemNote: "備註",
+    booked: "已訂好", important: "重要行程", addTransit: "新增通勤",
   },
   en: {
     appTitle: "Itinerary", editDays: "Edit dates", backfill: "Fill coords & translation",
@@ -251,6 +259,7 @@ const STRINGS = {
     loadingText: "Loading…",
     errorText: "Connection failed. Please check the Supabase URL/key, or whether the tables exist.",
     itemName: "Place name", itemNote: "Note",
+    booked: "Booked", important: "Important", addTransit: "Add transit",
   },
 };
 
@@ -302,6 +311,8 @@ const Pencil = (p) => <Icon {...p}><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2
 const XIcon = (p) => <Icon {...p}><path d="M18 6 6 18" /><path d="M6 6l12 12" /></Icon>;
 const Check = (p) => <Icon {...p}><path d="M20 6 9 17l-5-5" /></Icon>;
 const Plus = (p) => <Icon {...p}><path d="M12 5v14" /><path d="M5 12h14" /></Icon>;
+const Star = (p) => <Icon {...p}><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2Z" /></Icon>;
+const Bus = (p) => <Icon {...p}><rect x="3" y="5" width="18" height="12" rx="2" /><path d="M3 11h18" /><circle cx="7.5" cy="17.5" r="1.5" /><circle cx="16.5" cy="17.5" r="1.5" /></Icon>;
 const Monitor = (p) => <Icon {...p}><rect x="2" y="3" width="20" height="14" rx="2" /><path d="M8 21h8" /><path d="M12 17v4" /></Icon>;
 const Smartphone = (p) => <Icon {...p}><rect x="6" y="2" width="12" height="20" rx="2" /><path d="M11 18h2" /></Icon>;
 const Plane = (p) => <Icon {...p}><path d="M22 2 11 13" /><path d="M22 2 15 22l-4-9-9-4Z" /></Icon>;
@@ -315,10 +326,10 @@ const flightFromDb = (r) => ({ id: r.id, date: r.date, time: r.time || "", fligh
 const flightToDb = (d) => ({ date: d.date, time: d.time, flight_no: d.flightNo, from_code: d.from, to_code: d.to, terminal: d.terminal, note: d.note });
 const hotelFromDb = (r) => ({ id: r.id, name: r.name || "", address: r.address || "", checkin: r.checkin, checkinTime: r.checkin_time || "", checkout: r.checkout, checkoutTime: r.checkout_time || "", confirmation: r.confirmation || "" });
 const hotelToDb = (d) => ({ name: d.name, address: d.address, checkin: d.checkin, checkin_time: d.checkinTime, checkout: d.checkout, checkout_time: d.checkoutTime, confirmation: d.confirmation });
-const itemFromDb = (r) => ({ id: r.id, day: r.day, time: r.time || "", name: r.name, note: r.note || "", nameEn: r.name_en || "", noteEn: r.note_en || "", sortOrder: r.sort_order ?? 0, lat: r.lat ?? null, lng: r.lng ?? null });
+const itemFromDb = (r) => ({ id: r.id, day: r.day, time: r.time || "", name: r.name, note: r.note || "", nameEn: r.name_en || "", noteEn: r.note_en || "", sortOrder: r.sort_order ?? 0, lat: r.lat ?? null, lng: r.lng ?? null, booked: !!r.booked, important: !!r.important, isTransit: !!r.is_transit });
 
 /* ============ 行程卡片 ============ */
-function ItemCard({ item, lang, T, draggable, onDragStart, onDragEnd, onMapClick, onDelete, isEditing, onEditStart, onEditSave }) {
+function ItemCard({ item, lang, T, draggable, onDragStart, onDragEnd, onMapClick, onDelete, onToggleBooked, onToggleImportant, isEditing, onEditStart, onEditSave }) {
   const [draft, setDraft] = useState({ time: item.time, name: item.name, note: item.note });
   const tt = T || STRINGS.zh;
   if (isEditing) {
@@ -334,13 +345,16 @@ function ItemCard({ item, lang, T, draggable, onDragStart, onDragEnd, onMapClick
     );
   }
   return (
-    <div className="card" draggable={draggable} onDragStart={draggable ? (e) => onDragStart(e, item.id) : undefined} onDragEnd={draggable ? onDragEnd : undefined}>
+    <div className={`card ${item.isTransit ? "transit" : ""}`} draggable={draggable} onDragStart={draggable ? (e) => onDragStart(e, item.id) : undefined} onDragEnd={draggable ? onDragEnd : undefined}>
       <div className="card-top">
         {draggable && <GripVertical size={14} className="grip" />}
+        {item.isTransit && <Bus size={14} className="transit-icon" />}
         {item.mapIndex != null && <span className="map-index-badge">{item.mapIndex}</span>}
         {item.time && <span className="card-time">{item.time}</span>}
+        <span className={`toggle-badge book-badge ${item.booked ? "on" : ""}`} title={tt.booked} onClick={() => onToggleBooked(item.id)}><Check size={11} /></span>
+        <span className={`toggle-badge important-badge ${item.important ? "on" : ""}`} title={tt.important} onClick={() => onToggleImportant(item.id)}><Star size={11} /></span>
         <button className="icon-btn edit-btn" title={tt.edit} onClick={() => onEditStart(item.id)}><Pencil size={12} /></button>
-        <button className="icon-btn map-btn" title={tt.openInMaps} onClick={() => onMapClick(item.name)}><MapPin size={13} /></button>
+        {!item.isTransit && <button className="icon-btn map-btn" title={tt.openInMaps} onClick={() => onMapClick(item.name)}><MapPin size={13} /></button>}
         <button className="icon-btn del-btn" title={tt.delete} onClick={() => onDelete(item.id)}><XIcon size={13} /></button>
       </div>
       <div className="card-name">{item.name}</div>
@@ -713,6 +727,24 @@ function App() {
     const { data, error } = await db.from("itinerary_items").insert({ trip_id: tripId, day: dayKey, time: "", name, note: "" }).select().single();
     if (!error) setItems((prev) => [...prev, itemFromDb(data)]);
   };
+  const handleAddTransit = async (dayKey, name) => {
+    const { data, error } = await db.from("itinerary_items").insert({ trip_id: tripId, day: dayKey, time: "", name, note: "", is_transit: true }).select().single();
+    if (!error) setItems((prev) => [...prev, itemFromDb(data)]);
+  };
+  const handleToggleBooked = async (id) => {
+    const target = items.find((it) => it.id === id);
+    if (!target) return;
+    const nextVal = !target.booked;
+    setItems((prev) => prev.map((it) => (it.id === id ? { ...it, booked: nextVal } : it)));
+    await db.from("itinerary_items").update({ booked: nextVal }).eq("id", id);
+  };
+  const handleToggleImportant = async (id) => {
+    const target = items.find((it) => it.id === id);
+    if (!target) return;
+    const nextVal = !target.important;
+    setItems((prev) => prev.map((it) => (it.id === id ? { ...it, important: nextVal } : it)));
+    await db.from("itinerary_items").update({ important: nextVal }).eq("id", id);
+  };
   const handleAddInbox = async (name) => {
     const { data, error } = await db.from("itinerary_items").insert({ trip_id: tripId, day: null, time: "", name, note: "" }).select().single();
     if (!error) setItems((prev) => [...prev, itemFromDb(data)]);
@@ -890,6 +922,8 @@ function App() {
                     onDragEnd={handleDragEnd}
                     onMapClick={handleMapClick}
                     onDelete={handleDelete}
+                    onToggleBooked={handleToggleBooked}
+                    onToggleImportant={handleToggleImportant}
                     isEditing={editingId === it.id}
                     onEditStart={setEditingId}
                     onEditSave={handleEditSave}
@@ -922,10 +956,11 @@ function App() {
                         ))}
                         {getDayCards(d.key).manual.map((it) => (
                           <div key={it.id} onDragOver={(e) => e.preventDefault()} onDrop={(e) => handleDropBeforeCard(e, d.key, it.id)}>
-                            <ItemCard item={it} lang={lang} T={T} draggable={editingId !== it.id} onDragStart={handleDragStart} onDragEnd={handleDragEnd} onMapClick={handleMapClick} onDelete={handleDelete} isEditing={editingId === it.id} onEditStart={setEditingId} onEditSave={handleEditSave} />
+                            <ItemCard item={it} lang={lang} T={T} draggable={editingId !== it.id} onDragStart={handleDragStart} onDragEnd={handleDragEnd} onMapClick={handleMapClick} onDelete={handleDelete} onToggleBooked={handleToggleBooked} onToggleImportant={handleToggleImportant} isEditing={editingId === it.id} onEditStart={setEditingId} onEditSave={handleEditSave} />
                           </div>
                         ))}
                         <AddInline onAdd={(name) => handleAdd(d.key, name)} placeholder={T.addItem} inputPlaceholder={T.inputContent} />
+                        <AddInline onAdd={(name) => handleAddTransit(d.key, name)} placeholder={T.addTransit} inputPlaceholder={T.inputContent} />
                         {getDayCards(d.key).nightly.map((h) => <NightlyHotelStrip key={`night-${h.id}-${d.key}`} hotel={h} T={T} onMapClick={handleMapClick} />)}
                       </div>
                     </div>
@@ -961,10 +996,11 @@ function App() {
                 {activeDay && getDayCards(activeDay.key).manual.length === 0 && <div className="empty-note sortable-ignore">{T.dayEmpty}</div>}
                 {activeDay && getDayCards(activeDay.key).manual.map((it) => (
                   <div key={it.id} data-item-id={it.id}>
-                    <ItemCard item={it} lang={lang} T={T} draggable onDragStart={handleDragStart} onDragEnd={handleDragEnd} onMapClick={handleMapClick} onDelete={handleDelete} isEditing={editingId === it.id} onEditStart={setEditingId} onEditSave={handleEditSave} />
+                    <ItemCard item={it} lang={lang} T={T} draggable onDragStart={handleDragStart} onDragEnd={handleDragEnd} onMapClick={handleMapClick} onDelete={handleDelete} onToggleBooked={handleToggleBooked} onToggleImportant={handleToggleImportant} isEditing={editingId === it.id} onEditStart={setEditingId} onEditSave={handleEditSave} />
                   </div>
                 ))}
                 {activeDay && <div className="sortable-ignore"><AddInline onAdd={(name) => handleAdd(activeDay.key, name)} placeholder={T.addItem} inputPlaceholder={T.inputContent} /></div>}
+                {activeDay && <div className="sortable-ignore"><AddInline onAdd={(name) => handleAddTransit(activeDay.key, name)} placeholder={T.addTransit} inputPlaceholder={T.inputContent} /></div>}
                 {activeDay && getDayCards(activeDay.key).nightly.map((h) => <div key={`night-${h.id}-${activeDay.key}`} className="sortable-ignore"><NightlyHotelStrip hotel={h} T={T} onMapClick={handleMapClick} /></div>)}
               </div>
             </div>

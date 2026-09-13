@@ -39,15 +39,15 @@
   .brand-name { display: inline-flex; align-items: center; gap: 6px; }
   .title .sub { font-family: 'IBM Plex Sans', sans-serif; font-size: 12.5px; color: #6E715F; font-weight: 400; display: block; margin-top: 2px; }
   .title .sub button { border: none; background: none; color: #D97706; text-decoration: underline; cursor: pointer; font-size: 12.5px; padding: 0; margin-left: 6px; }
-  .toggle { display: flex; border: 1px solid #C7C9AC; border-radius: 8px; overflow: hidden; background: #D1D3B8; }
+  .toggle { display: flex; border: 1px solid #C7C9AC; border-radius: 8px; overflow: hidden; background: #fff; }
   .toggle button { display: flex; align-items: center; gap: 6px; border: none; background: transparent; padding: 7px 12px; font-size: 12.5px; font-family: 'IBM Plex Sans', sans-serif; color: #4E5145; cursor: pointer; }
   .toggle button.active { background: #1E1E1C; color: #E9EADE; }
 
   .section-tabs { display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap; }
-  .section-tab { display: flex; align-items: center; gap: 6px; border: 1px solid #C7C9AC; background: #D1D3B8; color: #4E5145; border-radius: 8px; padding: 7px 12px; font-size: 12.5px; cursor: pointer; }
+  .section-tab { display: flex; align-items: center; gap: 6px; border: 1px solid #C7C9AC; background: #fff; color: #4E5145; border-radius: 8px; padding: 7px 12px; font-size: 12.5px; cursor: pointer; }
   .section-tab.active { background: #2F5D50; border-color: #2F5D50; color: #FDECC8; }
 
-  .setup-panel { background: #D1D3B8; border: 1px solid #C7C9AC; border-radius: 10px; padding: 12px 14px; margin-bottom: 16px; display: flex; align-items: flex-end; gap: 14px; flex-wrap: wrap; }
+  .setup-panel { background: #fff; border: 1px solid #C7C9AC; border-radius: 10px; padding: 12px 14px; margin-bottom: 16px; display: flex; align-items: flex-end; gap: 14px; flex-wrap: wrap; }
   .setup-field { display: flex; flex-direction: column; gap: 4px; }
   .setup-field label { font-size: 11px; color: #6E715F; }
   .setup-field input { border: 1px solid #C7C9AC; border-radius: 6px; padding: 6px 8px; font-family: 'IBM Plex Sans', sans-serif; font-size: 12.5px; }
@@ -55,7 +55,7 @@
 
   .desktop-grid { display: flex; align-items: flex-start; gap: 14px; overflow-x: auto; padding-bottom: 10px; scrollbar-width: none; -ms-overflow-style: none; }
   .desktop-grid::-webkit-scrollbar { display: none; }
-  .day-col { flex: 0 0 190px; background: #D1D3B8; border: 1px solid #C7C9AC; border-radius: 10px; display: flex; flex-direction: column; }
+  .day-col { flex: 0 0 190px; background: #fff; border: 1px solid #C7C9AC; border-radius: 10px; display: flex; flex-direction: column; }
   .day-head { padding: 10px 12px 8px; border-bottom: 1.5px dashed #C7C9AC; display: flex; align-items: baseline; gap: 8px; }
   .day-head .md { font-family: 'Fraunces', serif; font-size: 19px; font-weight: 600; }
   .day-head .wd { font-size: 11.5px; color: #6E715F; }
@@ -100,7 +100,7 @@
   .mobile-wrap { max-width: 380px; margin: 0 auto; }
   .day-tabs { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 12px; scrollbar-width: none; -ms-overflow-style: none; scroll-snap-type: x proximity; }
   .day-tabs::-webkit-scrollbar { display: none; }
-  .day-tab { flex: 0 0 auto; border: 1px solid #C7C9AC; background: #D1D3B8; border-radius: 8px; padding: 6px 10px; text-align: center; cursor: pointer; font-family: 'Fraunces', serif; scroll-snap-align: start; }
+  .day-tab { flex: 0 0 auto; border: 1px solid #C7C9AC; background: #fff; border-radius: 8px; padding: 6px 10px; text-align: center; cursor: pointer; font-family: 'Fraunces', serif; scroll-snap-align: start; }
   .day-tab.active { background: #1E1E1C; border-color: #1E1E1C; }
   .day-tab .md { font-size: 14px; font-weight: 600; color: #1E1E1C; }
   .day-tab.active .md { color: #E9EADE; }
@@ -113,7 +113,7 @@
   .logi-section { display: flex; flex-direction: column; gap: 14px; }
   .logi-group-label { font-family: 'Fraunces', serif; font-size: 15px; font-weight: 600; color: #1E1E1C; margin-bottom: 2px; }
   .logi-list { display: flex; flex-direction: column; gap: 9px; }
-  .logi-card { display: flex; gap: 10px; background: #D1D3B8; border: 1px solid #CBCDB0; border-radius: 10px; padding: 10px 12px; align-items: flex-start; }
+  .logi-card { display: flex; gap: 10px; background: #fff; border: 1px solid #CBCDB0; border-radius: 10px; padding: 10px 12px; align-items: flex-start; }
   .logi-card.editing { flex-direction: column; align-items: stretch; border-color: #D97706; }
   .logi-icon { width: 30px; height: 30px; border-radius: 8px; background: #E1E3CE; display: flex; align-items: center; justify-content: center; color: #1E1E1C; flex: none; }
   .logi-main { flex: 1; min-width: 0; }
@@ -133,13 +133,13 @@
   .shop-section { max-width: 420px; }
   .shop-progress { font-size: 12px; color: #6E715F; margin-bottom: 10px; }
   .shop-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
-  .shop-row { display: flex; align-items: center; gap: 9px; background: #D1D3B8; border: 1px solid #CBCDB0; border-radius: 8px; padding: 8px 10px; }
+  .shop-row { display: flex; align-items: center; gap: 9px; background: #fff; border: 1px solid #CBCDB0; border-radius: 8px; padding: 8px 10px; }
   .shop-check { width: 18px; height: 18px; border-radius: 5px; border: 1.5px solid #9A9D88; background: transparent; display: flex; align-items: center; justify-content: center; color: #fff; cursor: pointer; flex: none; }
   .shop-check.checked { background: #2F5D50; border-color: #2F5D50; }
   .shop-text { flex: 1; font-size: 13.5px; }
   .shop-text.checked { text-decoration: line-through; color: #9A9D88; }
 
-  .inbox-shelf { background: #D1D3B8; border: 1px dashed #C7C9AC; border-radius: 10px; padding: 10px 12px; margin-bottom: 14px; }
+  .inbox-shelf { background: #fff; border: 1px dashed #C7C9AC; border-radius: 10px; padding: 10px 12px; margin-bottom: 14px; }
   .desktop-grid-wrap { position: relative; }
   .map-toggle-row { display: none; }
   .map-tab { position: fixed; right: 0; top: 100px; background: #1E1E1C; color: #E9EADE; padding: 12px 8px; border-radius: 10px 0 0 10px; cursor: pointer; font-size: 12px; writing-mode: vertical-rl; letter-spacing: 1px; z-index: 20; box-shadow: -3px 2px 8px rgba(51,57,42,0.18); border: none; }
@@ -157,7 +157,7 @@
   .mobile-map-close { position: absolute; top: 14px; left: 14px; width: 36px; height: 36px; border-radius: 50%; background: rgba(51,57,42,0.75); color: #E9EADE; display: flex; align-items: center; justify-content: center; z-index: 5; border: none; cursor: pointer; }
   .mobile-map-canvas-wrap { flex: 1; min-height: 0; }
   .mobile-map-canvas-wrap .map-canvas-el { height: 100%; border-radius: 0; min-height: 0; }
-  .mobile-map-bottom { background: #D1D3B8; border-top: 1px solid #C7C9AC; padding: 10px 12px 16px; }
+  .mobile-map-bottom { background: #fff; border-top: 1px solid #C7C9AC; padding: 10px 12px 16px; }
   .mobile-map-days { display: flex; gap: 6px; overflow-x: auto; margin-bottom: 8px; }
   .mobile-map-days::-webkit-scrollbar { display: none; }
   .mobile-map-mini-list { display: flex; gap: 8px; overflow-x: auto; }
@@ -168,7 +168,7 @@
   .mobile-map-mini-time { font-size: 10.5px; color: #6E715F; flex: none; }
   .mobile-map-empty { font-size: 12px; color: #7C7F6D; padding: 6px 2px; }
   .grid-nav { display: inline-flex; gap: 8px; margin-bottom: 8px; }
-  .grid-nav button { width: 30px; height: 30px; border-radius: 50%; border: 1px solid #C7C9AC; background: #D1D3B8; color: #1E1E1C; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(51,57,42,0.12); }
+  .grid-nav button { width: 30px; height: 30px; border-radius: 50%; border: 1px solid #C7C9AC; background: #fff; color: #1E1E1C; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(51,57,42,0.12); }
   .grid-nav button:hover { background: #DEDFC9; }
   .day-head { cursor: pointer; }
   .day-head:hover .md { color: #D97706; }
@@ -189,7 +189,7 @@
   .inbox-card-wrap .card { flex: none; }
   .drag-zone.drag-over { outline: 2px dashed #D97706; outline-offset: 2px; border-radius: 10px; }
   .loading-screen, .error-screen { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #E9EADE; color: #1E1E1C; font-family: 'IBM Plex Sans', sans-serif; text-align: center; padding: 20px; }
-  .error-screen pre { background: #D1D3B8; padding: 10px; border-radius: 8px; font-size: 11px; max-width: 500px; overflow: auto; text-align: left; }
+  .error-screen pre { background: #fff; padding: 10px; border-radius: 8px; font-size: 11px; max-width: 500px; overflow: auto; text-align: left; }
 </style>
 </head>
 <body>

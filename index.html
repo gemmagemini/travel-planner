@@ -257,21 +257,19 @@ a:hover { color: var(--ag-accent-hover); }
 .ag-header__left { display: flex; flex-direction: column; gap: 8px; }
 .ag-header__title { display: flex; align-items: center; gap: 16px; }
 
-/* 手機版標頭：依手機邏輯排版 —— logo 一行，其餘控制項各自一整排堆疊，避免擠成一團 */
+/* 手機版標頭：logo 靠左，其餘控制項維持小尺寸、自然寬度，不要撐滿一整排 */
 .ag-header--mobile {
   flex-direction: column;
   align-items: stretch;
-  gap: 12px;
+  gap: 10px;
   max-width: 380px;
   margin: 0 auto;
   padding: 16px 14px 14px;
 }
-.ag-header--mobile .ag-header__title { justify-content: center; }
-.ag-header--mobile .ag-header__tools { flex-direction: column; align-items: stretch; gap: 8px; }
-.ag-header--mobile .ag-backfill-btn { width: 100%; justify-content: center; }
-.ag-header--mobile .ag-backfill-status { text-align: center; }
-.ag-header--mobile .ag-toggle { width: 100%; }
-.ag-header--mobile .ag-toggle button { flex: 1; justify-content: center; }
+.ag-header--mobile .ag-header__title { justify-content: flex-start; }
+.ag-header--mobile .ag-header__tools { flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: flex-start; gap: 8px; }
+.ag-header--mobile .ag-backfill-btn { padding: 7px 9px; }
+.ag-header--mobile .ag-toggle button { padding: 5px 10px; font-size: 12px; }
 
 .ag-header__tools { display: flex; gap: 10px; align-items: center; }
 
@@ -1554,7 +1552,7 @@ function App() {
               </div>
             </div>
             <div className="ag-header__tools">
-              <button className="ag-backfill-btn" onClick={handleBackfillLocations}><Sparkles size={13} /> {T.backfill}</button>
+              <button className="ag-backfill-btn" title={T.backfill} onClick={handleBackfillLocations}><Sparkles size={13} />{!isMobile && <> {T.backfill}</>}</button>
               {backfillStatus && <span className="ag-backfill-status">{backfillStatus}</span>}
               <div className="ag-toggle">
                 <button className={lang === "zh" ? "is-on" : ""} onClick={() => setLang("zh")}>中文</button>

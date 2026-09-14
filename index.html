@@ -6,7 +6,7 @@
 <title>aGemda</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Manrope:wght@600;800&family=Instrument+Serif&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Manrope:wght@600;800&family=Instrument+Serif&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
 <script src="https://unpkg.com/@babel/standalone/babel.min.js" crossorigin></script>
@@ -97,7 +97,7 @@
   /* 字體 */
   --ag-font-ui:    "Noto Sans TC", system-ui, sans-serif;
   --ag-font-brand: "Manrope", sans-serif;   /* 只用於字標 */
-  --ag-font-num:   "Instrument Serif", serif; /* 只用於日期、時間 */
+  --ag-font-num:   "Fraunces", "Instrument Serif", serif; /* 日期、時間 —— 沿用 v1 字體 */
 
   /* 圓角與陰影 */
   --ag-r-panel: 20px;
@@ -106,6 +106,18 @@
   --ag-r-pill:  999px;
   --ag-shadow-pop: 0 18px 40px rgba(47, 51, 39, .14);
   --ag-shadow-tab: 0 1px 2px rgba(47, 51, 39, .08);
+
+  /* 選取中日期列強調色（只有日期列變色，卡片維持原樣） */
+  --ag-day-active:     #3f7f5c;
+  --ag-day-active-ink: #ffffff;
+
+  /* 完成勾選：淺綠外框／實心綠 */
+  --ag-check-empty: #a7d6b6;
+  --ag-check-done:  #3f8f5c;
+
+  /* 卡片序號紅圈（與地圖圖釘同色） */
+  --ag-badge-bg:  #c1524a;
+  --ag-badge-ink: #ffffff;
 }
 
 /* --------------------------------------------------------------------------
@@ -242,23 +254,49 @@ a:hover { color: var(--ag-accent-hover); }
 .ag-header__left { display: flex; flex-direction: column; gap: 8px; }
 .ag-header__title { display: flex; align-items: center; gap: 16px; }
 
-.ag-daterange {
-  font-family: var(--ag-font-num);
-  font-size: 26px;
-  letter-spacing: .01em;
-  color: #5d6450;
-}
-
-.ag-header__links { display: flex; align-items: center; gap: 18px; font-size: 13.5px; }
-.ag-header__links a {
-  color: var(--ag-ink-2);
-  text-decoration: none;
-  border-bottom: 1px solid #c6cdb2;
-  padding-bottom: 1px;
-}
-.ag-header__links a:hover { color: var(--ag-ink); border-bottom-color: var(--ag-ink-3); }
+.ag-header__links { display: flex; align-items: center; gap: 10px; font-size: 13.5px; }
 
 .ag-header__tools { display: flex; gap: 10px; align-items: center; }
+
+/* 補齊座標／翻譯 —— 獨立小按鈕 */
+.ag-backfill-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  border: 1px solid var(--ag-line-soft);
+  border-radius: var(--ag-r-pill);
+  background: var(--ag-surface);
+  padding: 6px 13px;
+  font: inherit; font-size: 12.5px;
+  color: var(--ag-ink-2);
+  cursor: pointer;
+}
+.ag-backfill-btn:hover { border-color: var(--ag-accent); color: var(--ag-accent); }
+.ag-backfill-btn svg { width: 13px; height: 13px; }
+.ag-backfill-status { font-size: 12px; color: var(--ag-ink-3); }
+
+/* 旅遊日期列 —— 獨立一排，位在分頁（行程／航班・飯店／購物清單）之外，
+   三個分頁都能用它改旅遊時間 */
+.ag-triprow {
+  display: flex; align-items: center; gap: 10px;
+  padding: 0 36px 16px;
+}
+.ag-triprow__label { font-size: 13.5px; color: var(--ag-ink-2); }
+.ag-triprow__range {
+  font-family: var(--ag-font-num);
+  font-size: 24px;
+  letter-spacing: .01em;
+  color: var(--ag-ink);
+}
+.ag-triprow__edit {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 26px; height: 26px;
+  border: 1px solid var(--ag-line-soft);
+  border-radius: 50%;
+  background: var(--ag-surface);
+  color: var(--ag-ink-3);
+  cursor: pointer;
+}
+.ag-triprow__edit:hover { border-color: var(--ag-accent); color: var(--ag-accent); }
+.ag-triprow__edit svg { width: 12px; height: 12px; }
 
 /* 分段切換（中文 / EN、電腦版 / 手機版） */
 .ag-toggle {
@@ -322,8 +360,9 @@ a:hover { color: var(--ag-accent-hover); }
 .ag-body { display: flex; align-items: stretch; }
 .ag-main { flex: 1; min-width: 0; padding: 24px 0 28px 36px; }
 
-/* 右側收合的地圖頁籤 */
+/* 右側地圖欄：收合時是細長頁籤，展開時把日期卡片往左推（不浮在畫面上） */
 .ag-maprail { flex: 0 0 44px; display: flex; align-items: flex-start; padding-top: 34px; }
+.ag-maprail--open { flex: 0 0 490px; align-items: stretch; padding: 24px 36px 28px 0; }
 .ag-maprail__tab {
   width: 32px;
   padding: 16px 0;
@@ -343,7 +382,7 @@ a:hover { color: var(--ag-accent-hover); }
    -------------------------------------------------------------------------- */
 
 .ag-backlog {
-  background: var(--ag-surface);
+  background: var(--ag-surface-alt);
   border: 1px solid var(--ag-line);
   border-radius: var(--ag-r-card);
   padding: 20px 22px 18px;
@@ -354,7 +393,12 @@ a:hover { color: var(--ag-accent-hover); }
 .ag-backlog__note,
 .ag-backlog__count { font-size: 12.5px; color: var(--ag-ink-3); }
 .ag-backlog__count { margin-left: auto; font-size: 12px; }
-.ag-backlog__track { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 6px; }
+/* 保留左右滑動，但不顯示拉霸 */
+.ag-backlog__track {
+  display: flex; gap: 12px; overflow-x: auto; padding-bottom: 6px;
+  scrollbar-width: none; -ms-overflow-style: none;
+}
+.ag-backlog__track::-webkit-scrollbar { display: none; }
 .ag-backlog__track > * { flex: 0 0 232px; }
 
 /* --------------------------------------------------------------------------
@@ -364,7 +408,8 @@ a:hover { color: var(--ag-accent-hover); }
 .ag-days { display: flex; gap: 16px; margin-top: 26px; overflow-x: auto; padding-bottom: 10px; }
 
 .ag-day {
-  flex: 0 0 292px;
+  flex: 0 0 250px;
+  overflow: hidden;
   background: var(--ag-surface-alt);
   border: 1px solid var(--ag-line);
   border-radius: var(--ag-r-card);
@@ -387,26 +432,17 @@ a:hover { color: var(--ag-accent-hover); }
 }
 .ag-day__foot svg { flex: 0 0 auto; margin-top: 2px; width: 14px; height: 14px; }
 
-/* 目前選取日（與地圖對應）＝整欄反白 */
-.ag-day--active {
-  background: var(--ag-dark);
-  border-color: var(--ag-dark);
-  color: var(--ag-ink-on-dark);
+/* 目前選取日（與地圖對應）＝只有日期列變綠，卡片維持原本顏色 */
+.ag-day--active .ag-day__head {
+  background: var(--ag-day-active);
+  margin: -18px -16px 14px;
+  padding: 12px 16px;
+  border-radius: var(--ag-r-card) var(--ag-r-card) 0 0;
+  border-bottom-color: transparent;
 }
-.ag-day--active .ag-day__head { border-bottom-color: var(--ag-dark-dash); }
-.ag-day--active .ag-day__wd,
-.ag-day--active .ag-day__count,
-.ag-day--active .ag-day__foot { color: var(--ag-ink-on-dark-2); }
-.ag-day--active .ag-day__foot { border-top-color: var(--ag-dark-dash); }
-.ag-day__badge {
-  margin-left: auto;
-  border: 1px solid var(--ag-dark-dash);
-  border-radius: var(--ag-r-pill);
-  padding: 2px 8px;
-  font-size: 11px;
-  letter-spacing: .1em;
-  color: #c8cbae;
-}
+.ag-day--active .ag-day__head .ag-day__date,
+.ag-day--active .ag-day__head .ag-day__wd,
+.ag-day--active .ag-day__head .ag-day__count { color: var(--ag-day-active-ink); }
 
 /* --------------------------------------------------------------------------
    項目卡
@@ -415,7 +451,7 @@ a:hover { color: var(--ag-accent-hover); }
      <header class="ag-item__bar">
        <span class="ag-item__grip">…</span>
        <span class="ag-gem ag-gem--18 ag-gem--spot">…</span>
-       <span class="ag-item__n">1</span>
+       <span class="ag-item__badge">1</span>
        <button class="ag-item__check">…</button>
        <span class="ag-item__acts">…</span>
      </header>
@@ -432,9 +468,21 @@ a:hover { color: var(--ag-accent-hover); }
 }
 .ag-item__bar { display: flex; align-items: center; gap: 7px; margin-bottom: 7px; }
 .ag-item__grip { color: #c9cfb6; cursor: grab; }
-.ag-item__n {
+
+/* 項目序號：與地圖圖釘同款的紅色圓形 */
+.ag-item__badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px; flex: 0 0 auto;
+  border-radius: 50%;
+  background: var(--ag-badge-bg);
+  color: var(--ag-badge-ink);
   font-family: var(--ag-font-brand);
-  font-size: 12px; font-weight: 800;
+  font-size: 10.5px; font-weight: 800;
+}
+/* 時間文字（沿用原本的數字字體） */
+.ag-item__time {
+  font-family: var(--ag-font-num);
+  font-size: 14px;
   color: var(--ag-ink-2);
 }
 .ag-item__title { margin: 0; font-size: 14.5px; font-weight: 700; line-height: 1.4; text-wrap: pretty; }
@@ -442,20 +490,24 @@ a:hover { color: var(--ag-accent-hover); }
 
 /* 卡上的圖示按鈕：低對比，hover 才跳出來 */
 .ag-item__acts { margin-left: auto; display: flex; gap: 8px; }
-.ag-item__check,
 .ag-item__acts button {
   border: 0; padding: 0; background: none; cursor: pointer;
   color: #b9c0a3;
   display: inline-flex;
 }
-.ag-item__check:hover,
 .ag-item__acts button:hover { color: var(--ag-ink-2); }
 .ag-item svg { width: 14px; height: 14px; }
-.ag-item__check svg { width: 15px; height: 15px; }
 
-/* 已完成 */
-.ag-item__check.is-done { color: #5c8a56; }
-.ag-item__check.is-done svg circle { fill: currentColor; stroke: none; }
+/* 完成勾選：淺綠外框（空心）→ 按下變實心綠 */
+.ag-item__check {
+  border: 0; padding: 0; background: none; cursor: pointer;
+  display: inline-flex;
+}
+.ag-item__check svg { width: 15px; height: 15px; fill: none; }
+.ag-item__check svg circle { stroke: var(--ag-check-empty); stroke-width: 1.6; }
+.ag-item__check svg path { stroke: none; }
+.ag-item__check:hover svg circle { stroke: var(--ag-check-done); }
+.ag-item__check.is-done svg circle { fill: var(--ag-check-done); stroke: var(--ag-check-done); }
 .ag-item__check.is-done svg path { stroke: #fff; stroke-width: 1.7; }
 
 /* 標記中的項目（琥珀） */
@@ -463,22 +515,10 @@ a:hover { color: var(--ag-accent-hover); }
   background: var(--ag-mark-bg);
   border-color: var(--ag-mark-line);
 }
-.ag-item--mark .ag-item__sub,
-.ag-item--mark .ag-item__n { color: var(--ag-mark-ink); }
+.ag-item--mark .ag-item__sub { color: var(--ag-mark-ink); }
+.ag-item--mark .ag-item__time { color: var(--ag-mark-ink); }
 .ag-item--mark .ag-item__grip { color: #cfc09a; }
-.ag-item--mark .ag-item__check,
 .ag-item--mark .ag-item__acts button { color: var(--ag-mark-icon); }
-
-/* 深色欄裡的項目卡（航班、入住、通勤） */
-.ag-day--active .ag-item {
-  background: var(--ag-dark-2);
-  border-color: var(--ag-dark-line);
-  color: var(--ag-ink-on-dark);
-}
-.ag-day--active .ag-item__sub { color: var(--ag-ink-on-dark-2); }
-.ag-day--active .ag-item__acts button,
-.ag-day--active .ag-item__check { color: #e8e7d6; opacity: .55; }
-.ag-day--active .ag-item__acts button:hover { opacity: 1; }
 
 .ag-chip {
   display: inline-flex; align-items: center; gap: 5px;
@@ -532,30 +572,31 @@ a:hover { color: var(--ag-accent-hover); }
 }
 .ag-add:hover { border-color: var(--ag-ink-3); color: var(--ag-ink-2); }
 .ag-add--wide { flex: 0 0 150px; border-radius: var(--ag-r-item); }
-.ag-day--active .ag-add { border-color: #575c49; color: #b6bba2; }
 
 /* --------------------------------------------------------------------------
    地圖面板（展開）
    -------------------------------------------------------------------------- */
 
 .ag-map {
-  width: 470px;
-  background: var(--ag-surface);
-  border: 1px solid var(--ag-line-soft);
+  width: 100%;
+  background: var(--ag-dark);
+  border: 1px solid var(--ag-dark);
   border-radius: 18px;
   padding: 18px;
-  box-shadow: var(--ag-shadow-pop);
   box-sizing: border-box;
+  color: var(--ag-ink-on-dark);
 }
 .ag-map__head {
   display: flex; align-items: center; gap: 10px;
   padding-bottom: 14px;
-  border-bottom: 1px solid #e6eada;
+  border-bottom: 1px solid var(--ag-dark-dash);
 }
-.ag-map__date { font-family: var(--ag-font-num); font-size: 25px; }
+.ag-map__date { font-family: var(--ag-font-num); font-size: 25px; color: var(--ag-ink-on-dark); }
 .ag-map__wd,
-.ag-map__count { font-size: 13px; color: var(--ag-ink-2); }
+.ag-map__count { font-size: 13px; color: var(--ag-ink-on-dark-2); }
 .ag-map__count { font-size: 12.5px; }
+.ag-map__close { border: 0; background: none; cursor: pointer; color: var(--ag-ink-on-dark-2); display: inline-flex; }
+.ag-map__close:hover { color: var(--ag-ink-on-dark); }
 .ag-map__canvas {
   position: relative;
   height: 520px;
@@ -564,7 +605,7 @@ a:hover { color: var(--ag-accent-hover); }
   overflow: hidden;
   background: #eceada;
 }
-.ag-map__legend { display: flex; gap: 16px; margin-top: 12px; font-size: 12px; color: var(--ag-ink-2); }
+.ag-map__legend { display: flex; gap: 16px; margin-top: 12px; font-size: 12px; color: var(--ag-ink-on-dark-2); }
 .ag-map__legend span { display: flex; align-items: center; gap: 6px; }
 .ag-map__legend i {
   width: 10px; height: 10px;
@@ -573,17 +614,14 @@ a:hover { color: var(--ag-accent-hover); }
 .ag-map__legend .is-spot { background: var(--ag-gem-spot-body); }
 .ag-map__legend .is-food { background: var(--ag-gem-food-body); }
 .ag-map__legend .is-sel  { background: var(--ag-gem-sel-body); }
-.ag-map__hint { margin-top: 12px; text-align: center; font-size: 12.5px; color: var(--ag-ink-2); }
+.ag-map__hint { margin-top: 12px; text-align: center; font-size: 12.5px; color: var(--ag-ink-on-dark-2); }
 
 /* --------------------------------------------------------------------------
    捲軸
    -------------------------------------------------------------------------- */
 
-.ag-backlog__track::-webkit-scrollbar,
 .ag-days::-webkit-scrollbar { height: 8px; }
-.ag-backlog__track::-webkit-scrollbar-thumb,
 .ag-days::-webkit-scrollbar-thumb { background: #c3cbb0; border-radius: 8px; }
-.ag-backlog__track::-webkit-scrollbar-track,
 .ag-days::-webkit-scrollbar-track { background: transparent; }
 
 
@@ -683,7 +721,7 @@ body { font-family: var(--ag-font-ui); }
 .mobile-map-mini-time { font-size: 10.5px; color: #807A54; flex: none; }
 .mobile-map-empty { font-size: 12px; color: #8F8964; padding: 6px 2px; }
 
-.setup-panel { background: #F2F0E2; border: 1px solid #C7C09E; border-radius: 10px; padding: 12px 14px; margin-bottom: 16px; display: flex; align-items: flex-end; gap: 14px; flex-wrap: wrap; }
+.setup-panel { background: #F2F0E2; border: 1px solid #C7C09E; border-radius: 10px; padding: 12px 14px; margin: 0 36px 16px; display: flex; align-items: flex-end; gap: 14px; flex-wrap: wrap; }
 .setup-field { display: flex; flex-direction: column; gap: 4px; }
 .setup-field label { font-size: 11px; color: #807A54; }
 .setup-field input { border: 1px solid #C7C09E; border-radius: 6px; padding: 6px 8px; font-family: 'IBM Plex Sans', sans-serif; font-size: 12.5px; }
@@ -713,7 +751,7 @@ const WEEKDAY_EN = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 /* ============ 介面文字 ============ */
 const STRINGS = {
   zh: {
-    appTitle: "行程規劃", editDays: "編輯天數", backfill: "補齊座標／翻譯",
+    appTitle: "行程規劃", editDays: "編輯天數", tripDateLabel: "旅遊日期：", backfill: "補齊座標／翻譯",
     backfilling: "補資料中…", desktopView: "電腦版", mobileView: "手機版",
     tabItinerary: "行程", tabLogistics: "航班・飯店", tabShopping: "購物清單",
     departureDate: "出發日期", returnDate: "回程日期", done: "完成",
@@ -739,7 +777,7 @@ const STRINGS = {
     booked: "已訂好", important: "重要行程", addTransit: "新增通勤",
   },
   en: {
-    appTitle: "Itinerary", editDays: "Edit dates", backfill: "Fill coords & translation",
+    appTitle: "Itinerary", editDays: "Edit dates", tripDateLabel: "Trip dates: ", backfill: "Fill coords & translation",
     backfilling: "Updating…", desktopView: "Desktop", mobileView: "Mobile",
     tabItinerary: "Itinerary", tabLogistics: "Flights & Hotels", tabShopping: "Shopping List",
     departureDate: "Start date", returnDate: "End date", done: "Done",
@@ -815,6 +853,7 @@ const XIcon = (p) => <Icon {...p}><path d="M18 6 6 18" /><path d="M6 6l12 12" />
 const Check = (p) => <Icon {...p}><path d="M20 6 9 17l-5-5" /></Icon>;
 const Plus = (p) => <Icon {...p}><path d="M12 5v14" /><path d="M5 12h14" /></Icon>;
 const Star = (p) => <Icon {...p}><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2Z" /></Icon>;
+const Sparkles = (p) => <Icon {...p}><path d="M12 3v4M12 17v4M5 5l2.5 2.5M16.5 16.5 19 19M3 12h4M17 12h4M5 19l2.5-2.5M16.5 7.5 19 5" /><circle cx="12" cy="12" r="2.4" /></Icon>;
 const Bus = (p) => <Icon {...p}><rect x="3" y="5" width="18" height="12" rx="2" /><path d="M3 11h18" /><circle cx="7.5" cy="17.5" r="1.5" /><circle cx="16.5" cy="17.5" r="1.5" /></Icon>;
 const Gem = ({ size = 26, kind = "spot" }) => (
   <span className={`ag-gem ag-gem--${size} ag-gem--${kind}`}>
@@ -887,8 +926,8 @@ function ItemCard({ item, lang, T, variant, draggable, onDragStart, onDragEnd, o
         <header className="ag-item__bar">
           {draggable && <span className="ag-item__grip"><GripVertical size={14} /></span>}
           {item.isTransit && <Bus size={14} />}
-          {item.mapIndex != null && !item.isTransit && <span className="ag-item__n">{item.mapIndex}</span>}
-          {item.time && <span className="ag-item__n" style={{ fontFamily: "var(--ag-font-num)", fontWeight: 400, fontSize: 13 }}>{item.time}</span>}
+          {item.mapIndex != null && !item.isTransit && <span className="ag-item__badge">{item.mapIndex}</span>}
+          {item.time && <span className="ag-item__time">{item.time}</span>}
           <button className={`ag-item__check ${item.booked ? "is-done" : ""}`} title={tt.booked} onClick={(e) => { e.stopPropagation(); onToggleBooked(item.id); }}>
             <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"></circle><path d="M5.4 8.2 7.2 10l3.4-3.6"></path></svg>
           </button>
@@ -1459,12 +1498,10 @@ function App() {
             <div className="ag-header__left">
               <div className="ag-header__title">
                 <AgLogo />
-                <span className="ag-daterange">{tripStart.slice(5).replace("-", "/")} – {tripEnd.slice(5).replace("-", "/")}</span>
               </div>
               <div className="ag-header__links">
-                <a onClick={() => setShowSetup((s) => !s)}>{T.editDays}</a>
-                <a onClick={handleBackfillLocations}>{T.backfill}</a>
-                {backfillStatus && <span style={{ fontSize: 12.5, color: "var(--ag-ink-3)" }}>{backfillStatus}</span>}
+                <button className="ag-backfill-btn" onClick={handleBackfillLocations}><Sparkles size={13} /> {T.backfill}</button>
+                {backfillStatus && <span className="ag-backfill-status">{backfillStatus}</span>}
               </div>
             </div>
             <div className="ag-header__tools">
@@ -1479,19 +1516,25 @@ function App() {
             </div>
           </div>
 
-          <div className="ag-tabs">
-            <button className={`ag-tab ${section === "itinerary" ? "is-active" : ""}`} onClick={() => setSection("itinerary")}><ListChecks size={13} /> {T.tabItinerary}</button>
-            <button className={`ag-tab ${section === "logistics" ? "is-active" : ""}`} onClick={() => setSection("logistics")}><Plane size={13} /> {T.tabLogistics}</button>
-            <button className={`ag-tab ${section === "shopping" ? "is-active" : ""}`} onClick={() => setSection("shopping")}><ShoppingBag size={13} /> {T.tabShopping}</button>
+          <div className="ag-triprow">
+            <span className="ag-triprow__label">{T.tripDateLabel}</span>
+            <span className="ag-triprow__range">{tripStart.slice(5).replace("-", "/")} – {tripEnd.slice(5).replace("-", "/")}</span>
+            <button className="ag-triprow__edit" title={T.editDays} onClick={() => setShowSetup((s) => !s)}><Pencil size={12} /></button>
           </div>
 
-      {showSetup && section === "itinerary" && (
+      {showSetup && (
         <div className="setup-panel">
           <div className="setup-field"><label>{T.departureDate}</label><input type="date" value={tripStart} onChange={(e) => handleTripStartChange(e.target.value)} /></div>
           <div className="setup-field"><label>{T.returnDate}</label><input type="date" value={tripEnd} onChange={(e) => handleTripEndChange(e.target.value)} /></div>
           <button className="setup-close" onClick={() => setShowSetup(false)}>{T.done}</button>
         </div>
       )}
+
+          <div className="ag-tabs">
+            <button className={`ag-tab ${section === "itinerary" ? "is-active" : ""}`} onClick={() => setSection("itinerary")}><ListChecks size={13} /> {T.tabItinerary}</button>
+            <button className={`ag-tab ${section === "logistics" ? "is-active" : ""}`} onClick={() => setSection("logistics")}><Plane size={13} /> {T.tabLogistics}</button>
+            <button className={`ag-tab ${section === "shopping" ? "is-active" : ""}`} onClick={() => setSection("shopping")}><ShoppingBag size={13} /> {T.tabShopping}</button>
+          </div>
 
       {section === "itinerary" && !isMobile && (
         <div className="ag-body">
@@ -1546,7 +1589,6 @@ function App() {
                   <div className="ag-day__head" onClick={() => setMapDayIdx(dayIdx)} style={{ cursor: "pointer" }}>
                     <span className="ag-day__date">{d.md}</span>
                     <span className="ag-day__wd">{weekdayLabel(d.weekdayIndex, lang)}</span>
-                    {mapOpen && dayIdx === mapDayIdx && <span className="ag-day__badge">選取中</span>}
                   </div>
                   <div className="ag-day__list">
                     {getDayCards(d.key).auto.map((it) => (
@@ -1568,30 +1610,29 @@ function App() {
             </div>
           </div>
 
-          <div className="ag-maprail">
-            <button className="ag-maprail__tab" onClick={() => setMapOpen((o) => !o)}>
-              {mapOpen ? T.collapseMap : T.expandMap}
-            </button>
+          <div className={`ag-maprail ${mapOpen ? "ag-maprail--open" : ""}`}>
+            {!mapOpen && (
+              <button className="ag-maprail__tab" onClick={() => setMapOpen(true)}>{T.expandMap}</button>
+            )}
+            {mapOpen && (
+              <div className="ag-map">
+                <div className="ag-map__head">
+                  <span className="ag-map__date">{days[mapDayIdx] ? days[mapDayIdx].md : ""}</span>
+                  <span className="ag-map__wd">{days[mapDayIdx] ? weekdayLabel(days[mapDayIdx].weekdayIndex, lang) : ""}</span>
+                  <span className="ag-map__count" style={{ marginLeft: "auto" }}>{mapPoints.length}</span>
+                  <button className="ag-map__close" onClick={() => setMapOpen(false)}><XIcon size={16} /></button>
+                </div>
+                <div className="ag-map__canvas">
+                  <div ref={mapDivRef} style={{ width: "100%", height: "100%" }}></div>
+                </div>
+                <div className="ag-map__legend">
+                  <span><i className="is-spot"></i>景點</span>
+                  <span><i className="is-food"></i>餐飲</span>
+                </div>
+                <div className="ag-map__hint">{T.mapHint}</div>
+              </div>
+            )}
           </div>
-
-          {mapOpen && (
-            <div className="ag-map" style={{ position: "absolute", right: 44, top: 0 }}>
-              <div className="ag-map__head">
-                <span className="ag-map__date">{days[mapDayIdx] ? days[mapDayIdx].md : ""}</span>
-                <span className="ag-map__wd">{days[mapDayIdx] ? weekdayLabel(days[mapDayIdx].weekdayIndex, lang) : ""}</span>
-                <span className="ag-map__count" style={{ marginLeft: "auto" }}>{mapPoints.length}</span>
-                <button className="ag-item__acts" style={{ border: "none", background: "none", cursor: "pointer" }} onClick={() => setMapOpen(false)}><XIcon size={16} /></button>
-              </div>
-              <div className="ag-map__canvas">
-                <div ref={mapDivRef} style={{ width: "100%", height: "100%" }}></div>
-              </div>
-              <div className="ag-map__legend">
-                <span><i className="is-spot"></i>景點</span>
-                <span><i className="is-food"></i>餐飲</span>
-              </div>
-              <div className="ag-map__hint">{T.mapHint}</div>
-            </div>
-          )}
         </div>
       )}
 

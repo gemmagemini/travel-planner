@@ -107,9 +107,7 @@
   --ag-shadow-pop: 0 18px 40px rgba(47, 51, 39, .14);
   --ag-shadow-tab: 0 1px 2px rgba(47, 51, 39, .08);
 
-  /* 選取中日期列強調色（只有日期列變色，卡片維持原樣） */
-  --ag-day-active:     #3f7f5c;
-  --ag-day-active-ink: #ffffff;
+  /* 選取中日期列強調色 —— 與地圖同一個墨綠 var(--ag-dark) */
 
   /* 完成勾選：淺綠外框／實心綠 */
   --ag-check-empty: #a7d6b6;
@@ -254,7 +252,6 @@ a:hover { color: var(--ag-accent-hover); }
 .ag-header__left { display: flex; flex-direction: column; gap: 8px; }
 .ag-header__title { display: flex; align-items: center; gap: 16px; }
 
-.ag-header__links { display: flex; align-items: center; gap: 10px; font-size: 13.5px; }
 
 .ag-header__tools { display: flex; gap: 10px; align-items: center; }
 
@@ -358,7 +355,7 @@ a:hover { color: var(--ag-accent-hover); }
    -------------------------------------------------------------------------- */
 
 .ag-body { display: flex; align-items: stretch; }
-.ag-main { flex: 1; min-width: 0; padding: 24px 0 28px 36px; }
+.ag-main { flex: 1; min-width: 0; padding: 0 0 28px 36px; }
 
 /* 右側地圖欄：收合時是細長頁籤，展開時把日期卡片往左推（不浮在畫面上） */
 .ag-maprail { flex: 0 0 44px; display: flex; align-items: flex-start; padding-top: 34px; }
@@ -386,7 +383,7 @@ a:hover { color: var(--ag-accent-hover); }
   border: 1px solid var(--ag-line);
   border-radius: var(--ag-r-card);
   padding: 20px 22px 18px;
-  margin-right: 36px;
+  margin: 24px 36px 0;
 }
 .ag-backlog__head { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
 .ag-backlog__title { font-size: 15px; font-weight: 700; }
@@ -408,7 +405,7 @@ a:hover { color: var(--ag-accent-hover); }
 .ag-days { display: flex; gap: 16px; margin-top: 26px; overflow-x: auto; padding-bottom: 10px; }
 
 .ag-day {
-  flex: 0 0 250px;
+  flex: 0 0 218px;
   overflow: hidden;
   background: var(--ag-surface-alt);
   border: 1px solid var(--ag-line);
@@ -432,17 +429,18 @@ a:hover { color: var(--ag-accent-hover); }
 }
 .ag-day__foot svg { flex: 0 0 auto; margin-top: 2px; width: 14px; height: 14px; }
 
-/* 目前選取日（與地圖對應）＝只有日期列變綠，卡片維持原本顏色 */
-.ag-day--active .ag-day__head {
-  background: var(--ag-day-active);
-  margin: -18px -16px 14px;
-  padding: 12px 16px;
-  border-radius: var(--ag-r-card) var(--ag-r-card) 0 0;
-  border-bottom-color: transparent;
+/* 目前選取日（與地圖對應）＝日期列＋卡片外面那層底色都變墨綠（跟地圖同色），
+   卡片本身不受影響（ag-item 有自己的白底，不會被連動變色） */
+.ag-day--active {
+  background: var(--ag-dark);
+  border-color: var(--ag-dark);
 }
-.ag-day--active .ag-day__head .ag-day__date,
-.ag-day--active .ag-day__head .ag-day__wd,
-.ag-day--active .ag-day__head .ag-day__count { color: var(--ag-day-active-ink); }
+.ag-day--active .ag-day__head { border-bottom-color: var(--ag-dark-dash); }
+.ag-day--active .ag-day__date,
+.ag-day--active .ag-day__wd,
+.ag-day--active .ag-day__count { color: var(--ag-ink-on-dark); }
+.ag-day--active .ag-day__foot { color: var(--ag-ink-on-dark-2); border-top-color: var(--ag-dark-dash); }
+.ag-day--active .ag-add { border-color: #575c49; color: #b6bba2; }
 
 /* --------------------------------------------------------------------------
    項目卡
@@ -498,17 +496,19 @@ a:hover { color: var(--ag-accent-hover); }
 .ag-item__acts button:hover { color: var(--ag-ink-2); }
 .ag-item svg { width: 14px; height: 14px; }
 
-/* 完成勾選：淺綠外框（空心）→ 按下變實心綠 */
+/* 完成勾選 —— 沿用 v1 的 toggle-badge 做法：圓形按鈕＋固定顯示的勾勾圖示，
+   用邊框/底色切換未完成（淺綠外框）／已完成（實心綘） */
 .ag-item__check {
-  border: 0; padding: 0; background: none; cursor: pointer;
-  display: inline-flex;
+  width: 17px; height: 17px; flex: 0 0 auto;
+  border-radius: 50%;
+  border: 1.5px solid var(--ag-check-empty);
+  color: var(--ag-check-empty);
+  background: none; padding: 0; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
 }
-.ag-item__check svg { width: 15px; height: 15px; fill: none; }
-.ag-item__check svg circle { stroke: var(--ag-check-empty); stroke-width: 1.6; }
-.ag-item__check svg path { stroke: none; }
-.ag-item__check:hover svg circle { stroke: var(--ag-check-done); }
-.ag-item__check.is-done svg circle { fill: var(--ag-check-done); stroke: var(--ag-check-done); }
-.ag-item__check.is-done svg path { stroke: #fff; stroke-width: 1.7; }
+.ag-item__check svg { width: 11px; height: 11px; }
+.ag-item__check:hover { border-color: var(--ag-check-done); color: var(--ag-check-done); }
+.ag-item__check.is-done { border-color: var(--ag-check-done); background: var(--ag-check-done); color: #fff; }
 
 /* 標記中的項目（琥珀） */
 .ag-item--mark {
@@ -605,15 +605,6 @@ a:hover { color: var(--ag-accent-hover); }
   overflow: hidden;
   background: #eceada;
 }
-.ag-map__legend { display: flex; gap: 16px; margin-top: 12px; font-size: 12px; color: var(--ag-ink-on-dark-2); }
-.ag-map__legend span { display: flex; align-items: center; gap: 6px; }
-.ag-map__legend i {
-  width: 10px; height: 10px;
-  clip-path: polygon(50% 0%, 100% 34%, 50% 100%, 0% 34%);
-}
-.ag-map__legend .is-spot { background: var(--ag-gem-spot-body); }
-.ag-map__legend .is-food { background: var(--ag-gem-food-body); }
-.ag-map__legend .is-sel  { background: var(--ag-gem-sel-body); }
 .ag-map__hint { margin-top: 12px; text-align: center; font-size: 12.5px; color: var(--ag-ink-on-dark-2); }
 
 /* --------------------------------------------------------------------------
@@ -929,7 +920,7 @@ function ItemCard({ item, lang, T, variant, draggable, onDragStart, onDragEnd, o
           {item.mapIndex != null && !item.isTransit && <span className="ag-item__badge">{item.mapIndex}</span>}
           {item.time && <span className="ag-item__time">{item.time}</span>}
           <button className={`ag-item__check ${item.booked ? "is-done" : ""}`} title={tt.booked} onClick={(e) => { e.stopPropagation(); onToggleBooked(item.id); }}>
-            <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"></circle><path d="M5.4 8.2 7.2 10l3.4-3.6"></path></svg>
+            <Check size={11} />
           </button>
           <span className="ag-item__acts">
             <button title={tt.edit} onClick={(e) => { e.stopPropagation(); onEditStart(item.id); }}><Pencil size={13} /></button>
@@ -1499,12 +1490,10 @@ function App() {
               <div className="ag-header__title">
                 <AgLogo />
               </div>
-              <div className="ag-header__links">
-                <button className="ag-backfill-btn" onClick={handleBackfillLocations}><Sparkles size={13} /> {T.backfill}</button>
-                {backfillStatus && <span className="ag-backfill-status">{backfillStatus}</span>}
-              </div>
             </div>
             <div className="ag-header__tools">
+              <button className="ag-backfill-btn" onClick={handleBackfillLocations}><Sparkles size={13} /> {T.backfill}</button>
+              {backfillStatus && <span className="ag-backfill-status">{backfillStatus}</span>}
               <div className="ag-toggle">
                 <button className={lang === "zh" ? "is-on" : ""} onClick={() => setLang("zh")}>中文</button>
                 <button className={lang === "en" ? "is-on" : ""} onClick={() => setLang("en")}>EN</button>
@@ -1537,52 +1526,53 @@ function App() {
           </div>
 
       {section === "itinerary" && !isMobile && (
-        <div className="ag-body">
-          <div className="ag-main">
-            <div
-              className="ag-backlog"
-              onDragOver={(e) => e.preventDefault()}
-              onDrop={(e) => handleDropOnDay(e, null)}
-            >
-              <div className="ag-backlog__head">
-                <ListChecks size={15} />
-                <span className="ag-backlog__title">{T.inboxLabel}</span>
-                {inboxItems.length > 0 && <span className="ag-backlog__count">{inboxItems.length}</span>}
-              </div>
-              {inboxItems.length === 0 ? (
-                <div className="ag-backlog__note">{T.inboxEmpty}</div>
-              ) : (
-                <div className="ag-backlog__track" ref={inboxListRef} data-day="">
-                  {inboxItems.map((it) => (
-                    <div key={it.id} data-item-id={it.id} onDragOver={(e) => e.preventDefault()} onDrop={(e) => handleDropBeforeCard(e, null, it.id)}>
-                      <ItemCard
-                        item={displayItem(it)}
-                        lang={lang}
-                        T={T}
-                        variant="ag"
-                        draggable={editingId !== it.id}
-                        onDragStart={handleDragStart}
-                        onDragEnd={handleDragEnd}
-                        onMapClick={handleMapClick}
-                        onDelete={handleDelete}
-                        onToggleBooked={handleToggleBooked}
-                        onToggleImportant={handleToggleImportant}
-                        isEditing={editingId === it.id}
-                        onEditStart={setEditingId}
-                        onEditSave={handleEditSave}
-                      />
-                    </div>
-                  ))}
-                  <AddInline onAdd={handleAddInbox} placeholder={T.addToInbox} inputPlaceholder={T.inputContent} variant="ag" wide />
-                </div>
-              )}
-              {inboxItems.length === 0 && (
-                <div style={{ marginTop: 10 }}>
-                  <AddInline onAdd={handleAddInbox} placeholder={T.addToInbox} inputPlaceholder={T.inputContent} variant="ag" />
-                </div>
-              )}
+        <React.Fragment>
+          <div
+            className="ag-backlog"
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={(e) => handleDropOnDay(e, null)}
+          >
+            <div className="ag-backlog__head">
+              <ListChecks size={15} />
+              <span className="ag-backlog__title">{T.inboxLabel}</span>
+              {inboxItems.length > 0 && <span className="ag-backlog__count">{inboxItems.length}</span>}
             </div>
+            {inboxItems.length === 0 ? (
+              <div className="ag-backlog__note">{T.inboxEmpty}</div>
+            ) : (
+              <div className="ag-backlog__track" ref={inboxListRef} data-day="">
+                {inboxItems.map((it) => (
+                  <div key={it.id} data-item-id={it.id} onDragOver={(e) => e.preventDefault()} onDrop={(e) => handleDropBeforeCard(e, null, it.id)}>
+                    <ItemCard
+                      item={displayItem(it)}
+                      lang={lang}
+                      T={T}
+                      variant="ag"
+                      draggable={editingId !== it.id}
+                      onDragStart={handleDragStart}
+                      onDragEnd={handleDragEnd}
+                      onMapClick={handleMapClick}
+                      onDelete={handleDelete}
+                      onToggleBooked={handleToggleBooked}
+                      onToggleImportant={handleToggleImportant}
+                      isEditing={editingId === it.id}
+                      onEditStart={setEditingId}
+                      onEditSave={handleEditSave}
+                    />
+                  </div>
+                ))}
+                <AddInline onAdd={handleAddInbox} placeholder={T.addToInbox} inputPlaceholder={T.inputContent} variant="ag" wide />
+              </div>
+            )}
+            {inboxItems.length === 0 && (
+              <div style={{ marginTop: 10 }}>
+                <AddInline onAdd={handleAddInbox} placeholder={T.addToInbox} inputPlaceholder={T.inputContent} variant="ag" />
+              </div>
+            )}
+          </div>
 
+          <div className="ag-body">
+          <div className="ag-main">
             <div className="ag-days" ref={desktopGridRef}>
               {days.map((d, dayIdx) => (
                 <div key={d.key} className={`ag-day ${mapOpen && dayIdx === mapDayIdx ? "ag-day--active" : ""}`} onDragOver={(e) => e.preventDefault()} onDrop={(e) => handleDropOnDay(e, d.key)}>
@@ -1625,15 +1615,12 @@ function App() {
                 <div className="ag-map__canvas">
                   <div ref={mapDivRef} style={{ width: "100%", height: "100%" }}></div>
                 </div>
-                <div className="ag-map__legend">
-                  <span><i className="is-spot"></i>景點</span>
-                  <span><i className="is-food"></i>餐飲</span>
-                </div>
                 <div className="ag-map__hint">{T.mapHint}</div>
               </div>
             )}
           </div>
-        </div>
+          </div>
+        </React.Fragment>
       )}
 
       {section === "itinerary" && isMobile && (

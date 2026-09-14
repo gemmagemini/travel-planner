@@ -241,6 +241,11 @@ a:hover { color: var(--ag-accent-hover); }
   border-radius: var(--ag-r-panel);
   overflow: hidden;
 }
+.ag-shell--mobile {
+  border: none;
+  border-radius: 0;
+  overflow: visible;
+}
 
 .ag-header {
   display: flex;
@@ -252,7 +257,7 @@ a:hover { color: var(--ag-accent-hover); }
 .ag-header__left { display: flex; flex-direction: column; gap: 8px; }
 .ag-header__title { display: flex; align-items: center; gap: 16px; }
 
-/* 手機版標頭：依手機邏輯排版，避免電腦版寬版標頭在窄畫面裡跑版 */
+/* 手機版標頭：依手機邏輯排版 —— logo 一行，其餘控制項各自一整排堆疊，避免擠成一團 */
 .ag-header--mobile {
   flex-direction: column;
   align-items: stretch;
@@ -261,7 +266,12 @@ a:hover { color: var(--ag-accent-hover); }
   margin: 0 auto;
   padding: 16px 14px 14px;
 }
-.ag-header--mobile .ag-header__tools { flex-wrap: wrap; row-gap: 8px; }
+.ag-header--mobile .ag-header__title { justify-content: center; }
+.ag-header--mobile .ag-header__tools { flex-direction: column; align-items: stretch; gap: 8px; }
+.ag-header--mobile .ag-backfill-btn { width: 100%; justify-content: center; }
+.ag-header--mobile .ag-backfill-status { text-align: center; }
+.ag-header--mobile .ag-toggle { width: 100%; }
+.ag-header--mobile .ag-toggle button { flex: 1; justify-content: center; }
 
 .ag-header__tools { display: flex; gap: 10px; align-items: center; }
 
@@ -341,8 +351,27 @@ a:hover { color: var(--ag-accent-hover); }
   padding: 0 36px 20px;
   border-bottom: 1px solid var(--ag-line-soft);
 }
-.ag-tabs--mobile { max-width: 380px; margin: 0 auto; padding: 0 14px 16px; gap: 6px; }
-.ag-tabs--mobile .ag-tab { flex: 1; justify-content: center; padding: 8px 6px; font-size: 12.5px; }
+.ag-tabs--mobile {
+  max-width: 352px;
+  margin: 0 auto 16px;
+  padding: 3px;
+  gap: 0;
+  background: var(--ag-surface-sunk);
+  border: 1px solid #d3dabf;
+  border-bottom: 1px solid #d3dabf;
+  border-radius: 10px;
+}
+.ag-tabs--mobile .ag-tab {
+  flex: 1; justify-content: center;
+  padding: 8px 6px;
+  font-size: 12.5px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--ag-ink-2);
+}
+.ag-tabs--mobile .ag-tab:hover { border-color: transparent; }
+.ag-tabs--mobile .ag-tab.is-active { box-shadow: none; }
 .ag-tab {
   display: flex; align-items: center; gap: 8px;
   padding: 9px 20px;
@@ -409,7 +438,7 @@ a:hover { color: var(--ag-accent-hover); }
   scrollbar-width: none; -ms-overflow-style: none;
 }
 .ag-backlog__track::-webkit-scrollbar { display: none; }
-.ag-backlog__track > * { flex: 0 0 218px; }
+.ag-backlog__track > * { flex: 0 0 186px; }
 
 /* --------------------------------------------------------------------------
    日欄
@@ -532,6 +561,8 @@ a:hover { color: var(--ag-accent-hover); }
 .ag-item--mark .ag-item__time { color: var(--ag-mark-ink); }
 .ag-item--mark .ag-item__grip { color: #cfc09a; }
 .ag-item--mark .ag-item__acts button { color: var(--ag-mark-icon); }
+.ag-item--mark .ag-item__check { border-color: var(--ag-check-empty); color: var(--ag-check-empty); }
+.ag-item--mark .ag-item__check.is-done { background: var(--ag-check-done); border-color: var(--ag-check-done); color: #fff; }
 
 .ag-chip {
   display: inline-flex; align-items: center; gap: 5px;
@@ -705,7 +736,7 @@ body { font-family: var(--ag-font-ui); }
 .mobile-wrap { max-width: 380px; margin: 0 auto; padding: 0 14px; }
 
 /* 待排清單（手機版）—— 跟電腦版一樣：淺綠底、卡片白色、可滑動但不顯示拉霸 */
-.inbox-shelf { max-width: 380px; margin: 20px auto 20px; background: var(--ag-surface-alt); border: 1px solid var(--ag-line); border-radius: var(--ag-r-card); padding: 14px 14px 12px; }
+.inbox-shelf { max-width: 352px; margin: 20px auto 20px; background: var(--ag-surface-alt); border: 1px solid var(--ag-line); border-radius: var(--ag-r-card); padding: 14px 14px 12px; }
 .inbox-label { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; color: var(--ag-ink); margin-bottom: 10px; }
 .inbox-empty { font-size: 12px; color: var(--ag-ink-3); }
 .inbox-row { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; -ms-overflow-style: none; }
@@ -1515,7 +1546,7 @@ function App() {
   return (
     <div className="wrap">
       <div className="ag-app">
-        <div className="ag-shell">
+        <div className={`ag-shell ${isMobile ? "ag-shell--mobile" : ""}`}>
           <div className={`ag-header ${isMobile ? "ag-header--mobile" : ""}`}>
             <div className="ag-header__left">
               <div className="ag-header__title">

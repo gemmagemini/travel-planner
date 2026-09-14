@@ -3,9 +3,10 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>行程規劃</title>
+<title>aGemda</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Manrope:wght@600;800&family=Instrument+Serif&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
 <script src="https://unpkg.com/@babel/standalone/babel.min.js" crossorigin></script>
@@ -30,167 +31,668 @@
   });
 </script>
 <style>
-  * { box-sizing: border-box; }
-  html, body, #root { height: 100%; margin: 0; }
-  body { font-family: 'IBM Plex Sans', sans-serif; }
-  .wrap { font-family: 'IBM Plex Sans', sans-serif; background: #D8DEC4; color: #33392A; padding: 20px; min-height: 100vh; }
-  .topbar { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 10px; flex-wrap: wrap; gap: 10px; }
-  .title { font-family: 'Fraunces', serif; font-size: 26px; font-weight: 600; letter-spacing: -0.01em; }
-  .brand-name { display: inline-flex; align-items: center; gap: 6px; }
-  .title .sub { font-family: 'IBM Plex Sans', sans-serif; font-size: 12.5px; color: #807A54; font-weight: 400; display: block; margin-top: 2px; }
-  .title .sub button { border: none; background: none; color: #C1524A; text-decoration: underline; cursor: pointer; font-size: 12.5px; padding: 0; margin-left: 6px; }
-  .toggle { display: flex; border: 1px solid #C7C09E; border-radius: 8px; overflow: hidden; background: #fff; }
-  .toggle button { display: flex; align-items: center; gap: 6px; border: none; background: transparent; padding: 7px 12px; font-size: 12.5px; font-family: 'IBM Plex Sans', sans-serif; color: #5C5A40; cursor: pointer; }
-  .toggle button.active { background: #33392A; color: #D8DEC4; }
+/* ==========================================================================
+   aGemda — 介面樣式（電腦版）
+   從設計稿 1a「清透」整理而成。只負責視覺，不改動功能與 DOM 語意。
+   使用方式：載入 Manrope / Noto Sans TC / Instrument Serif 三套字體後引入本檔。
+   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Manrope:wght@600;800&family=Instrument+Serif&display=swap" rel="stylesheet">
+   ========================================================================== */
 
-  .section-tabs { display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap; }
-  .section-tab { display: flex; align-items: center; gap: 6px; border: 1px solid #C7C09E; background: #fff; color: #5C5A40; border-radius: 8px; padding: 7px 12px; font-size: 12.5px; cursor: pointer; }
-  .section-tab.active { background: #C1524A; border-color: #C1524A; color: #F3DAD6; }
+:root {
+  /* 底與面 */
+  --ag-bg:            #eef0e4;  /* 頁面底 */
+  --ag-surface:       #ffffff;  /* 卡片、待排清單 */
+  --ag-surface-alt:   #f7f8f0;  /* 日欄底 */
+  --ag-surface-sunk:  #e3e7d5;  /* 切換器底槽 */
+  --ag-line:          #e2e6d6;  /* 卡片邊線 */
+  --ag-line-soft:     #dde2cd;  /* 分隔線 */
+  --ag-line-dash:     #d5dbc2;  /* 虛線分隔 */
+  --ag-line-add:      #cdd4b8;  /* 新增按鈕虛線框 */
 
-  .setup-panel { background: #F2F0E2; border: 1px solid #C7C09E; border-radius: 10px; padding: 12px 14px; margin-bottom: 16px; display: flex; align-items: flex-end; gap: 14px; flex-wrap: wrap; }
-  .setup-field { display: flex; flex-direction: column; gap: 4px; }
-  .setup-field label { font-size: 11px; color: #807A54; }
-  .setup-field input { border: 1px solid #C7C09E; border-radius: 6px; padding: 6px 8px; font-family: 'IBM Plex Sans', sans-serif; font-size: 12.5px; }
-  .setup-close { margin-left: auto; border: none; background: #33392A; color: #D8DEC4; border-radius: 6px; padding: 7px 12px; font-size: 12.5px; cursor: pointer; }
+  /* 文字 */
+  --ag-ink:           #2f3327;  /* 主要文字 */
+  --ag-ink-2:         #4f5544;  /* 次要文字（4.5:1） */
+  --ag-ink-3:         #6a7056;  /* 說明、計數（4.5:1） */
+  --ag-ink-on-dark:   #eceadb;
+  --ag-ink-on-dark-2: #a8ad95;
 
-  .desktop-grid { display: flex; align-items: flex-start; gap: 14px; overflow-x: auto; padding-bottom: 10px; scrollbar-width: none; -ms-overflow-style: none; }
-  .desktop-grid::-webkit-scrollbar { display: none; }
-  .day-col { flex: 0 0 190px; background: #F2F0E2; border: 1px solid #C7C09E; border-radius: 10px; display: flex; flex-direction: column; }
-  .day-head { padding: 10px 12px 8px; border-bottom: 1.5px dashed #C7C09E; display: flex; align-items: baseline; gap: 8px; }
-  .day-head .md { font-family: 'Fraunces', serif; font-size: 19px; font-weight: 600; }
-  .day-head .wd { font-size: 11.5px; color: #807A54; }
-  .inbox-label { font-family: 'Fraunces', serif; font-size: 13.5px; font-weight: 600; color: #33392A; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
-  .inbox-label-line { display: none; }
-  .day-body { padding: 8px; display: flex; flex-direction: column; gap: 8px; }
+  /* 行為色 */
+  --ag-accent:        #b0473d;  /* CTA、目前分頁、選取中 */
+  --ag-accent-ink:    #ffffff;
+  --ag-accent-hover:  #8d372f;
 
-  .card { background: #fff; border: 1px solid #D8D2AC; border-radius: 8px; padding: 8px 9px 9px; cursor: pointer; }
-  .card:active { cursor: grabbing; }
-  .card.important { background: #FBF0D9; border-color: #E0A93A; }
-  .card.editing { cursor: default; border-color: #C1524A; }
-  .card.auto { background: #F7F4E8; border: 1.5px dashed #C7C09E; cursor: default; }
-  .card-kind-tag { display: flex; align-items: center; gap: 3px; font-size: 9.5px; background: #E4DEC0; color: #5C5A40; padding: 2px 6px; border-radius: 4px; }
-  .night-strip { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #5C5A40; padding-top: 6px; margin-top: 2px; border-top: 1px dashed #C7C09E; cursor: pointer; }
-  .night-strip:hover { color: #33392A; }
-  .card-top { display: flex; align-items: center; gap: 6px; margin-bottom: 3px; }
-  .grip { color: #A8A17E; padding: 8px; margin: -8px; }
-  .card-time { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #C1524A; background: #F3DAD6; padding: 1px 5px; border-radius: 4px; }
-  .map-index-badge { width: 16px; height: 16px; border-radius: 50%; background: #C1524A; color: #fff; font-size: 9.5px; display: flex; align-items: center; justify-content: center; flex: none; }
-  .toggle-badge { width: 17px; height: 17px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; flex: none; }
-  .book-badge { border: 1.5px solid #D8D2AC; color: #D8D2AC; }
-  .book-badge.on { border-color: #5C8A5F; background: #5C8A5F; color: #fff; }
-  .card.transit { border-style: dashed; border-color: #A9C7C4; background: #F0F5F0; }
-  .transit-icon { color: #5C8A5F; flex: none; }
-  .icon-btn { border: none; background: transparent; color: #A8A17E; cursor: pointer; padding: 2px; display: flex; align-items: center; gap: 4px; border-radius: 4px; }
-  .icon-btn:hover { background: #E7E2C7; color: #33392A; }
-  .edit-btn { margin-left: auto; }
-  .edit-btn:hover { color: #E0A93A; }
-  .map-btn:hover { color: #C1524A; }
-  .del-btn:hover { color: #8B4A3A; }
-  .card-name { font-size: 13.5px; font-weight: 500; line-height: 1.35; }
-  .card-note { font-size: 11.5px; color: #807A54; margin-top: 2px; }
+  /* 深色欄（目前選取日、地圖側欄） */
+  --ag-dark:          #2f3327;
+  --ag-dark-2:        #383d2f;  /* 深色欄裡的卡片 */
+  --ag-dark-3:        #43483a;  /* 編輯中的卡片 */
+  --ag-dark-line:     #4a4f3d;
+  --ag-dark-dash:     #565b48;
+  --ag-dark-time:     #f0b8ae;  /* 深色欄裡的時間 */
 
-  .edit-row { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
-  .edit-time { width: 70px; border: 1px solid #C7C09E; border-radius: 5px; padding: 4px 6px; font-size: 11.5px; font-family: 'IBM Plex Mono', monospace; }
-  .save-btn { margin-left: auto; background: #C1524A; color: #fff; border-radius: 5px; padding: 4px 6px; }
-  .save-btn:hover { background: #8B4A3A; color: #fff; }
-  .edit-name, .edit-note { width: 100%; border: 1px solid #D8D2AC; border-radius: 5px; padding: 6px 7px; font-size: 13px; font-family: 'IBM Plex Sans', sans-serif; margin-bottom: 5px; }
+  /* 標記狀態（琥珀）：重點項目 */
+  --ag-mark-bg:       #fdf4de;
+  --ag-mark-line:     #e6c98c;
+  --ag-mark-icon:     #c0a86f;
+  --ag-mark-ink:      #6d6034;
 
-  .add-row { display: flex; align-items: center; gap: 5px; border: 1px dashed #C7C09E; background: transparent; color: #807A54; font-size: 12px; padding: 7px; border-radius: 7px; cursor: pointer; justify-content: center; }
-  .add-row:hover { border-color: #E0A93A; color: #C1524A; }
-  .add-form input { width: 100%; border: 1px solid #E0A93A; border-radius: 7px; padding: 7px 8px; font-size: 12.5px; font-family: 'IBM Plex Sans', sans-serif; }
+  /* 寶石三色 —— 綠＝景點、黃＝餐飲、紅＝選取中 */
+  --ag-gem-spot-body:  #4a7f6e;
+  --ag-gem-spot-facet: #6da795;
+  --ag-gem-spot-shine: #9ecabd;
+  --ag-gem-spot-ring:  #2e5d4f;
+  --ag-gem-spot-g:     #4a8f78;   /* 字標大寫 G */
 
-  .mobile-wrap { max-width: 380px; margin: 0 auto; }
-  .day-tabs { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 12px; scrollbar-width: none; -ms-overflow-style: none; scroll-snap-type: x proximity; }
-  .day-tabs::-webkit-scrollbar { display: none; }
-  .day-tab { flex: 0 0 auto; border: 1px solid #C7C09E; background: #fff; border-radius: 8px; padding: 6px 10px; text-align: center; cursor: pointer; font-family: 'Fraunces', serif; scroll-snap-align: start; }
-  .day-tab.active { background: #33392A; border-color: #33392A; }
-  .day-tab .md { font-size: 14px; font-weight: 600; color: #33392A; }
-  .day-tab.active .md { color: #D8DEC4; }
-  .day-tab .wd { font-size: 9.5px; color: #807A54; font-family: 'IBM Plex Sans', sans-serif; }
-  .day-tab.active .wd { color: #DAD6B6; }
+  --ag-gem-food-body:  #c98a1e;
+  --ag-gem-food-facet: #e2ab43;
+  --ag-gem-food-shine: #f4d488;
+  --ag-gem-food-ring:  #8a5f12;
+  --ag-gem-food-g:     #c08313;
 
-  .mobile-list { display: flex; flex-direction: column; gap: 9px; padding-bottom: 76px; }
-  .empty-note { font-size: 12px; color: #8F8964; padding: 8px 2px 12px; }
+  --ag-gem-sel-body:   #b0473d;
+  --ag-gem-sel-facet:  #d4796d;
+  --ag-gem-sel-shine:  #e8a79c;
+  --ag-gem-sel-ring:   #7e2f28;
+  --ag-gem-sel-g:      #c25a4e;
 
-  .logi-section { display: flex; flex-direction: column; gap: 14px; }
-  .logi-group-label { font-family: 'Fraunces', serif; font-size: 15px; font-weight: 600; color: #33392A; margin-bottom: 2px; }
-  .logi-list { display: flex; flex-direction: column; gap: 9px; }
-  .logi-card { display: flex; gap: 10px; background: #fff; border: 1px solid #D8D2AC; border-radius: 10px; padding: 10px 12px; align-items: flex-start; }
-  .logi-card.editing { flex-direction: column; align-items: stretch; border-color: #C1524A; }
-  .logi-icon { width: 30px; height: 30px; border-radius: 8px; background: #E4DEC0; display: flex; align-items: center; justify-content: center; color: #33392A; flex: none; }
-  .logi-main { flex: 1; min-width: 0; }
-  .logi-top-row { display: flex; align-items: center; gap: 8px; margin-bottom: 2px; }
-  .logi-date { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #C1524A; }
-  .logi-tag { font-size: 10.5px; background: #E7E2C7; color: #5C5A40; padding: 1px 6px; border-radius: 4px; }
-  .logi-title { font-size: 14px; font-weight: 600; }
-  .logi-sub { font-size: 12px; color: #807A54; margin-top: 1px; }
-  .logi-actions { display: flex; gap: 2px; flex: none; }
-  .logi-edit-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 6px; }
-  .logi-edit-grid input, .logi-note-input { border: 1px solid #D8D2AC; border-radius: 6px; padding: 6px 8px; font-size: 12.5px; font-family: 'IBM Plex Sans', sans-serif; margin-bottom: 6px; width: 100%; }
-  .logi-save { justify-content: center; background: #C1524A; color: #fff; padding: 7px; border-radius: 6px; }
-  .logi-save:hover { background: #8B4A3A; color: #fff; }
-  .logi-add { display: flex; align-items: center; gap: 5px; border: 1px dashed #C7C09E; background: transparent; color: #807A54; font-size: 12.5px; padding: 8px; border-radius: 8px; cursor: pointer; justify-content: center; }
-  .logi-add:hover { border-color: #E0A93A; color: #C1524A; }
+  /* 字體 */
+  --ag-font-ui:    "Noto Sans TC", system-ui, sans-serif;
+  --ag-font-brand: "Manrope", sans-serif;   /* 只用於字標 */
+  --ag-font-num:   "Instrument Serif", serif; /* 只用於日期、時間 */
 
-  .shop-section { max-width: 420px; }
-  .shop-progress { font-size: 12px; color: #807A54; margin-bottom: 10px; }
-  .shop-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
-  .shop-row { display: flex; align-items: center; gap: 9px; background: #fff; border: 1px solid #D8D2AC; border-radius: 8px; padding: 8px 10px; }
-  .shop-check { width: 18px; height: 18px; border-radius: 5px; border: 1.5px solid #A8A17E; background: transparent; display: flex; align-items: center; justify-content: center; color: #fff; cursor: pointer; flex: none; }
-  .shop-check.checked { background: #C1524A; border-color: #C1524A; }
-  .shop-text { flex: 1; font-size: 13.5px; }
-  .shop-text.checked { text-decoration: line-through; color: #A8A17E; }
+  /* 圓角與陰影 */
+  --ag-r-panel: 20px;
+  --ag-r-card:  16px;
+  --ag-r-item:  12px;
+  --ag-r-pill:  999px;
+  --ag-shadow-pop: 0 18px 40px rgba(47, 51, 39, .14);
+  --ag-shadow-tab: 0 1px 2px rgba(47, 51, 39, .08);
+}
 
-  .inbox-shelf { background: #F2F0E2; border: 1px dashed #C7C09E; border-radius: 10px; padding: 10px 12px; margin-bottom: 14px; }
-  .desktop-grid-wrap { position: relative; }
-  .map-toggle-row { display: none; }
-  .map-tab { position: fixed; right: 0; top: 100px; background: #33392A; color: #D8DEC4; padding: 12px 8px; border-radius: 10px 0 0 10px; cursor: pointer; font-size: 12px; writing-mode: vertical-rl; letter-spacing: 1px; z-index: 20; box-shadow: -3px 2px 8px rgba(51,57,42,0.18); border: none; }
-  .map-tab.open { background: #C1524A; }
-  .itinerary-split { display: flex; gap: 14px; align-items: stretch; }
-  .itinerary-left { flex: 1; min-width: 0; }
-  .map-panel-side { flex: 0 0 46%; min-width: 320px; max-width: 560px; background: #33392A; border: 1px solid #4A5140; border-radius: 12px; box-shadow: 0 4px 16px rgba(51,57,42,0.12); padding: 12px; display: flex; flex-direction: column; }
-  .map-panel-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
-  .map-panel-head .md { font-family: 'Fraunces', serif; font-size: 17px; font-weight: 600; color: #D8DEC4; }
-  .map-panel-close { border: none; background: transparent; color: #B7BDA0; cursor: pointer; padding: 4px; }
-  .map-canvas-el { width: 100%; flex: 1; min-height: 320px; border-radius: 8px; background: #4A5140; }
-  .map-hint { font-size: 10.5px; color: #9BA184; text-align: center; margin-top: 6px; }
-  .mobile-map-fab { position: fixed; right: 16px; bottom: 16px; width: 52px; height: 52px; border-radius: 50%; background: #33392A; display: flex; align-items: center; justify-content: center; box-shadow: 0 3px 10px rgba(51,57,42,0.35); z-index: 30; border: none; cursor: pointer; }
-  .mobile-map-overlay { position: fixed; inset: 0; background: #D8DEC4; z-index: 100; display: flex; flex-direction: column; }
-  .mobile-map-close { position: absolute; top: 14px; left: 14px; width: 36px; height: 36px; border-radius: 50%; background: rgba(51,57,42,0.75); color: #D8DEC4; display: flex; align-items: center; justify-content: center; z-index: 5; border: none; cursor: pointer; }
-  .mobile-map-canvas-wrap { flex: 1; min-height: 0; }
-  .mobile-map-canvas-wrap .map-canvas-el { height: 100%; border-radius: 0; min-height: 0; }
-  .mobile-map-bottom { background: #fff; border-top: 1px solid #C7C09E; padding: 10px 12px 16px; }
-  .mobile-map-days { display: flex; gap: 6px; overflow-x: auto; margin-bottom: 8px; }
-  .mobile-map-days::-webkit-scrollbar { display: none; }
-  .mobile-map-mini-list { display: flex; gap: 8px; overflow-x: auto; }
-  .mobile-map-mini-list::-webkit-scrollbar { display: none; }
-  .mobile-map-mini-card { flex: 0 0 auto; background: #fff; border: 1px solid #D8D2AC; border-radius: 8px; padding: 8px 10px; display: flex; align-items: center; gap: 8px; cursor: pointer; max-width: 220px; }
-  .mobile-map-mini-num { width: 18px; height: 18px; border-radius: 50%; background: #C1524A; color: #fff; font-size: 10px; display: flex; align-items: center; justify-content: center; flex: none; }
-  .mobile-map-mini-name { font-size: 12.5px; color: #33392A; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .mobile-map-mini-time { font-size: 10.5px; color: #807A54; flex: none; }
-  .mobile-map-empty { font-size: 12px; color: #8F8964; padding: 6px 2px; }
-  .grid-nav { display: inline-flex; gap: 8px; margin-bottom: 8px; }
-  .grid-nav button { width: 30px; height: 30px; border-radius: 50%; border: 1px solid #C7C09E; background: #fff; color: #33392A; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(51,57,42,0.12); }
-  .grid-nav button:hover { background: #E7E2C7; }
-  .day-head { cursor: pointer; }
-  .day-head:hover .md { color: #C1524A; }
-  .day-col.map-selected { background: #33392A; }
-  .day-col.map-selected .day-head { border-bottom-color: #4A5140; }
-  .day-col.map-selected .day-head .md { color: #D8DEC4; }
-  .day-col.map-selected .day-head .wd { color: #DAD6B6; }
-  .day-col.map-selected .day-head:hover .md { color: #D8DEC4; }
-  .day-col.map-selected .add-row { color: #A8AD8E; border-color: #5C6350; }
-  .day-col.map-selected .add-row:hover { color: #E0A93A; border-color: #E0A93A; }
-  .day-col.map-selected .night-strip { color: #A8AD8E; border-top-color: #5C6350; }
-  .day-col.map-selected .night-strip:hover { color: #D8DEC4; }
-  .inbox-row { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; -ms-overflow-style: none; }
-  .inbox-row::-webkit-scrollbar { display: none; }
-  .inbox-empty { font-size: 11.5px; color: #8F8964; padding: 4px 2px; }
-  .inbox-card-wrap { flex: 0 0 170px; display: flex; flex-direction: column; gap: 5px; }
-  .inbox-card-wrap .card { flex: none; }
-  .drag-zone.drag-over { outline: 2px dashed #C1524A; outline-offset: 2px; border-radius: 10px; }
-  .loading-screen, .error-screen { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #D8DEC4; color: #33392A; font-family: 'IBM Plex Sans', sans-serif; text-align: center; padding: 20px; }
-  .error-screen pre { background: #fff; padding: 10px; border-radius: 8px; font-size: 11px; max-width: 500px; overflow: auto; text-align: left; }
+/* --------------------------------------------------------------------------
+   基礎
+   -------------------------------------------------------------------------- */
+
+body {
+  margin: 0;
+  background: var(--ag-bg);
+  color: var(--ag-ink);
+  font-family: var(--ag-font-ui);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: var(--ag-accent); }
+a:hover { color: var(--ag-accent-hover); }
+
+.ag-app { max-width: 1680px; margin: 0 auto; }
+
+/* --------------------------------------------------------------------------
+   字標
+   HTML：
+   <span class="ag-logo">
+     <span class="ag-gem ag-gem--26 ag-gem--spot">
+       <i class="ag-gem__ring"></i>
+       <i class="ag-gem__body"></i>
+       <i class="ag-gem__facet"></i>
+       <i class="ag-gem__shine"></i>
+       <i class="ag-gem__ring ag-gem__ring--front"></i>
+     </span>
+     <span class="ag-logo__word">a<em>G</em>emda</span>
+   </span>
+   -------------------------------------------------------------------------- */
+
+.ag-logo { display: flex; align-items: center; gap: 13px; }
+
+.ag-logo__word {
+  font-family: var(--ag-font-brand);
+  font-weight: 800;
+  font-size: 34px;
+  letter-spacing: .01em;
+  line-height: 1;
+  color: var(--ag-ink);
+}
+.ag-logo__word em { font-style: normal; color: var(--ag-gem-spot-g); }
+.ag-logo--food .ag-logo__word em { color: var(--ag-gem-food-g); }
+.ag-logo--sel  .ag-logo__word em { color: var(--ag-gem-sel-g); }
+
+/* 字標尺寸：42px 記號搭 46px 字、26px 記號搭 34px 字、18px 記號搭 16px 字 */
+.ag-logo--lg .ag-logo__word { font-size: 46px; }
+.ag-logo--sm { gap: 9px; }
+.ag-logo--sm .ag-logo__word { font-size: 16px; }
+
+/* --------------------------------------------------------------------------
+   寶石記號（字標、地圖圖釘、項目序號共用）
+   立體感的關鍵：地面環畫兩次，後緣在寶石之下、前緣用 inset(50% 0 0 0)
+   壓在寶石之上，寶石尖端因此坐進圈中心而不是黏在旁邊。
+   -------------------------------------------------------------------------- */
+
+.ag-gem { position: relative; display: inline-block; flex: 0 0 auto; }
+
+.ag-gem__body,
+.ag-gem__facet,
+.ag-gem__shine,
+.ag-gem__ring { position: absolute; display: block; box-sizing: border-box; }
+
+.ag-gem__body  { clip-path: polygon(50% 0%, 100% 34%, 50% 100%, 0% 34%); }
+.ag-gem__facet { clip-path: polygon(0% 34%, 50% 0%, 100% 34%, 50% 52%); }
+.ag-gem__shine { clip-path: polygon(50% 0%, 76% 17%, 50% 34%, 24% 17%); }
+.ag-gem__ring  { border-radius: 50%; border-style: solid; }
+.ag-gem__ring--front { clip-path: inset(50% 0 0 0); }
+
+/* 尺寸 —— 42px（大字標） */
+.ag-gem--42 { width: 44px; height: 50px; }
+.ag-gem--42 .ag-gem__body,
+.ag-gem--42 .ag-gem__facet,
+.ag-gem--42 .ag-gem__shine { left: 1px; top: 0; width: 42px; height: 42px; }
+.ag-gem--42 .ag-gem__ring { left: 5px; top: 33px; width: 34px; height: 13px; border-width: 2.2px; }
+
+/* 尺寸 —— 26px（標頭、地圖圖釘） */
+.ag-gem--26 { width: 28px; height: 32px; }
+.ag-gem--26 .ag-gem__body,
+.ag-gem--26 .ag-gem__facet,
+.ag-gem--26 .ag-gem__shine { left: 1px; top: 0; width: 26px; height: 26px; }
+.ag-gem--26 .ag-gem__ring { left: 3px; top: 21px; width: 22px; height: 9px; border-width: 1.7px; }
+
+/* 尺寸 —— 18px（項目序號） */
+.ag-gem--18 { width: 20px; height: 24px; }
+.ag-gem--18 .ag-gem__body,
+.ag-gem--18 .ag-gem__facet,
+.ag-gem--18 .ag-gem__shine { left: 1px; top: 0; width: 18px; height: 18px; }
+.ag-gem--18 .ag-gem__ring { left: 2px; top: 15px; width: 16px; height: 7px; border-width: 1.4px; }
+.ag-gem--18 .ag-gem__shine { display: none; } /* 太小，亮面會糊掉 */
+
+/* 配色 */
+.ag-gem--spot .ag-gem__body  { background: var(--ag-gem-spot-body); }
+.ag-gem--spot .ag-gem__facet { background: var(--ag-gem-spot-facet); }
+.ag-gem--spot .ag-gem__shine { background: var(--ag-gem-spot-shine); }
+.ag-gem--spot .ag-gem__ring  { border-color: var(--ag-gem-spot-ring); }
+
+.ag-gem--food .ag-gem__body  { background: var(--ag-gem-food-body); }
+.ag-gem--food .ag-gem__facet { background: var(--ag-gem-food-facet); }
+.ag-gem--food .ag-gem__shine { background: var(--ag-gem-food-shine); }
+.ag-gem--food .ag-gem__ring  { border-color: var(--ag-gem-food-ring); }
+
+.ag-gem--sel .ag-gem__body  { background: var(--ag-gem-sel-body); }
+.ag-gem--sel .ag-gem__facet { background: var(--ag-gem-sel-facet); }
+.ag-gem--sel .ag-gem__shine { background: var(--ag-gem-sel-shine); }
+.ag-gem--sel .ag-gem__ring  { border-color: var(--ag-gem-sel-ring); }
+
+/* 地圖上的圖釘：以尖端為定位點 */
+.ag-pin { position: absolute; transform: translate(-50%, -100%); }
+
+/* --------------------------------------------------------------------------
+   外框與標頭
+   -------------------------------------------------------------------------- */
+
+.ag-shell {
+  background: var(--ag-bg);
+  border: 1px solid #d7ddc6;
+  border-radius: var(--ag-r-panel);
+  overflow: hidden;
+}
+
+.ag-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 24px;
+  padding: 30px 36px 22px;
+}
+.ag-header__left { display: flex; flex-direction: column; gap: 8px; }
+.ag-header__title { display: flex; align-items: center; gap: 16px; }
+
+.ag-daterange {
+  font-family: var(--ag-font-num);
+  font-size: 26px;
+  letter-spacing: .01em;
+  color: #5d6450;
+}
+
+.ag-header__links { display: flex; align-items: center; gap: 18px; font-size: 13.5px; }
+.ag-header__links a {
+  color: var(--ag-ink-2);
+  text-decoration: none;
+  border-bottom: 1px solid #c6cdb2;
+  padding-bottom: 1px;
+}
+.ag-header__links a:hover { color: var(--ag-ink); border-bottom-color: var(--ag-ink-3); }
+
+.ag-header__tools { display: flex; gap: 10px; align-items: center; }
+
+/* 分段切換（中文 / EN、電腦版 / 手機版） */
+.ag-toggle {
+  display: flex;
+  gap: 0;
+  background: var(--ag-surface-sunk);
+  border: 1px solid #d3dabf;
+  border-radius: 10px;
+  padding: 3px;
+}
+.ag-toggle button {
+  display: flex; align-items: center; gap: 6px;
+  padding: 6px 14px;
+  border: 0; border-radius: 7px;
+  background: transparent;
+  font: inherit; font-size: 13px;
+  color: var(--ag-ink-2);
+  cursor: pointer;
+}
+.ag-toggle button:hover { color: var(--ag-ink); }
+.ag-toggle button[aria-pressed="true"],
+.ag-toggle button.is-on {
+  background: var(--ag-surface);
+  color: var(--ag-ink);
+  font-weight: 700;
+  box-shadow: var(--ag-shadow-tab);
+}
+.ag-toggle svg { width: 14px; height: 14px; }
+
+/* 主分頁（行程 / 航班·飯店 / 購物清單） */
+.ag-tabs {
+  display: flex;
+  gap: 8px;
+  padding: 0 36px 20px;
+  border-bottom: 1px solid var(--ag-line-soft);
+}
+.ag-tab {
+  display: flex; align-items: center; gap: 8px;
+  padding: 9px 20px;
+  border: 1px solid var(--ag-line-soft);
+  border-radius: var(--ag-r-pill);
+  background: var(--ag-surface);
+  font: inherit; font-size: 14px;
+  color: #4d5340;
+  cursor: pointer;
+}
+.ag-tab:hover { border-color: var(--ag-ink-3); color: var(--ag-ink); }
+.ag-tab[aria-selected="true"],
+.ag-tab.is-active {
+  background: var(--ag-accent);
+  border-color: var(--ag-accent);
+  color: var(--ag-accent-ink);
+  font-weight: 700;
+}
+.ag-tab svg { width: 15px; height: 15px; }
+
+/* --------------------------------------------------------------------------
+   主體：行程區 ＋ 右側地圖
+   -------------------------------------------------------------------------- */
+
+.ag-body { display: flex; align-items: stretch; }
+.ag-main { flex: 1; min-width: 0; padding: 24px 0 28px 36px; }
+
+/* 右側收合的地圖頁籤 */
+.ag-maprail { flex: 0 0 44px; display: flex; align-items: flex-start; padding-top: 34px; }
+.ag-maprail__tab {
+  width: 32px;
+  padding: 16px 0;
+  background: var(--ag-dark);
+  color: #f0efe1;
+  border: 0;
+  border-radius: 10px 0 0 10px;
+  font: inherit; font-size: 13px;
+  letter-spacing: .12em;
+  writing-mode: vertical-rl;
+  text-align: center;
+  cursor: pointer;
+}
+
+/* --------------------------------------------------------------------------
+   待排清單
+   -------------------------------------------------------------------------- */
+
+.ag-backlog {
+  background: var(--ag-surface);
+  border: 1px solid var(--ag-line);
+  border-radius: var(--ag-r-card);
+  padding: 20px 22px 18px;
+  margin-right: 36px;
+}
+.ag-backlog__head { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+.ag-backlog__title { font-size: 15px; font-weight: 700; }
+.ag-backlog__note,
+.ag-backlog__count { font-size: 12.5px; color: var(--ag-ink-3); }
+.ag-backlog__count { margin-left: auto; font-size: 12px; }
+.ag-backlog__track { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 6px; }
+.ag-backlog__track > * { flex: 0 0 232px; }
+
+/* --------------------------------------------------------------------------
+   日欄
+   -------------------------------------------------------------------------- */
+
+.ag-days { display: flex; gap: 16px; margin-top: 26px; overflow-x: auto; padding-bottom: 10px; }
+
+.ag-day {
+  flex: 0 0 292px;
+  background: var(--ag-surface-alt);
+  border: 1px solid var(--ag-line);
+  border-radius: var(--ag-r-card);
+  padding: 18px 16px 16px;
+}
+.ag-day__head {
+  display: flex; align-items: baseline; gap: 9px;
+  padding-bottom: 14px;
+  border-bottom: 1px dashed var(--ag-line-dash);
+}
+.ag-day__date { font-family: var(--ag-font-num); font-size: 27px; line-height: 1; }
+.ag-day__wd { font-size: 13px; color: var(--ag-ink-3); }
+.ag-day__count { margin-left: auto; font-size: 12px; color: var(--ag-ink-3); }
+.ag-day__list { display: flex; flex-direction: column; gap: 9px; margin-top: 14px; }
+.ag-day__foot {
+  display: flex; gap: 7px;
+  margin-top: 14px; padding-top: 12px;
+  border-top: 1px dashed var(--ag-line-dash);
+  font-size: 12.5px; color: var(--ag-ink-3); line-height: 1.5;
+}
+.ag-day__foot svg { flex: 0 0 auto; margin-top: 2px; width: 14px; height: 14px; }
+
+/* 目前選取日（與地圖對應）＝整欄反白 */
+.ag-day--active {
+  background: var(--ag-dark);
+  border-color: var(--ag-dark);
+  color: var(--ag-ink-on-dark);
+}
+.ag-day--active .ag-day__head { border-bottom-color: var(--ag-dark-dash); }
+.ag-day--active .ag-day__wd,
+.ag-day--active .ag-day__count,
+.ag-day--active .ag-day__foot { color: var(--ag-ink-on-dark-2); }
+.ag-day--active .ag-day__foot { border-top-color: var(--ag-dark-dash); }
+.ag-day__badge {
+  margin-left: auto;
+  border: 1px solid var(--ag-dark-dash);
+  border-radius: var(--ag-r-pill);
+  padding: 2px 8px;
+  font-size: 11px;
+  letter-spacing: .1em;
+  color: #c8cbae;
+}
+
+/* --------------------------------------------------------------------------
+   項目卡
+   HTML：
+   <article class="ag-item">
+     <header class="ag-item__bar">
+       <span class="ag-item__grip">…</span>
+       <span class="ag-gem ag-gem--18 ag-gem--spot">…</span>
+       <span class="ag-item__n">1</span>
+       <button class="ag-item__check">…</button>
+       <span class="ag-item__acts">…</span>
+     </header>
+     <h4 class="ag-item__title">…</h4>
+     <p class="ag-item__sub">…</p>
+   </article>
+   -------------------------------------------------------------------------- */
+
+.ag-item {
+  background: var(--ag-surface);
+  border: 1px solid #e4e8d8;
+  border-radius: var(--ag-r-item);
+  padding: 11px 12px;
+}
+.ag-item__bar { display: flex; align-items: center; gap: 7px; margin-bottom: 7px; }
+.ag-item__grip { color: #c9cfb6; cursor: grab; }
+.ag-item__n {
+  font-family: var(--ag-font-brand);
+  font-size: 12px; font-weight: 800;
+  color: var(--ag-ink-2);
+}
+.ag-item__title { margin: 0; font-size: 14.5px; font-weight: 700; line-height: 1.4; text-wrap: pretty; }
+.ag-item__sub { margin: 3px 0 0; font-size: 12.5px; color: var(--ag-ink-3); line-height: 1.5; }
+
+/* 卡上的圖示按鈕：低對比，hover 才跳出來 */
+.ag-item__acts { margin-left: auto; display: flex; gap: 8px; }
+.ag-item__check,
+.ag-item__acts button {
+  border: 0; padding: 0; background: none; cursor: pointer;
+  color: #b9c0a3;
+  display: inline-flex;
+}
+.ag-item__check:hover,
+.ag-item__acts button:hover { color: var(--ag-ink-2); }
+.ag-item svg { width: 14px; height: 14px; }
+.ag-item__check svg { width: 15px; height: 15px; }
+
+/* 已完成 */
+.ag-item__check.is-done { color: #5c8a56; }
+.ag-item__check.is-done svg circle { fill: currentColor; stroke: none; }
+.ag-item__check.is-done svg path { stroke: #fff; stroke-width: 1.7; }
+
+/* 標記中的項目（琥珀） */
+.ag-item--mark {
+  background: var(--ag-mark-bg);
+  border-color: var(--ag-mark-line);
+}
+.ag-item--mark .ag-item__sub,
+.ag-item--mark .ag-item__n { color: var(--ag-mark-ink); }
+.ag-item--mark .ag-item__grip { color: #cfc09a; }
+.ag-item--mark .ag-item__check,
+.ag-item--mark .ag-item__acts button { color: var(--ag-mark-icon); }
+
+/* 深色欄裡的項目卡（航班、入住、通勤） */
+.ag-day--active .ag-item {
+  background: var(--ag-dark-2);
+  border-color: var(--ag-dark-line);
+  color: var(--ag-ink-on-dark);
+}
+.ag-day--active .ag-item__sub { color: var(--ag-ink-on-dark-2); }
+.ag-day--active .ag-item__acts button,
+.ag-day--active .ag-item__check { color: #e8e7d6; opacity: .55; }
+.ag-day--active .ag-item__acts button:hover { opacity: 1; }
+
+.ag-chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: var(--ag-dark-line);
+  border-radius: 6px;
+  padding: 3px 8px;
+  font-size: 11.5px;
+  color: #dfe0cd;
+}
+.ag-time { font-family: var(--ag-font-num); font-size: 17px; color: var(--ag-dark-time); }
+
+/* 編輯中的卡片（輸入狀態） */
+.ag-item--editing {
+  background: var(--ag-dark-3);
+  border: 1.5px solid #d98f84;
+}
+.ag-field {
+  width: 100%;
+  background: var(--ag-dark);
+  border: 1px solid #5a5f4b;
+  border-radius: 8px;
+  padding: 7px 10px;
+  font: inherit; font-size: 13px;
+  color: var(--ag-ink-on-dark);
+  box-sizing: border-box;
+}
+.ag-field::placeholder { color: var(--ag-ink-on-dark-2); }
+.ag-field--title { font-size: 13.5px; font-weight: 700; }
+.ag-field-row { display: flex; gap: 8px; margin-bottom: 9px; }
+.ag-field-row .ag-field { flex: 1; }
+.ag-confirm {
+  width: 38px; border: 0; border-radius: 8px;
+  background: var(--ag-accent);
+  color: var(--ag-accent-ink);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+}
+
+/* 新增按鈕（虛線） */
+.ag-addrow { display: flex; gap: 8px; }
+.ag-add {
+  flex: 1;
+  border: 1px dashed var(--ag-line-add);
+  border-radius: 10px;
+  padding: 9px;
+  background: none;
+  font: inherit; font-size: 13px;
+  color: var(--ag-ink-3);
+  text-align: center;
+  cursor: pointer;
+}
+.ag-add:hover { border-color: var(--ag-ink-3); color: var(--ag-ink-2); }
+.ag-add--wide { flex: 0 0 150px; border-radius: var(--ag-r-item); }
+.ag-day--active .ag-add { border-color: #575c49; color: #b6bba2; }
+
+/* --------------------------------------------------------------------------
+   地圖面板（展開）
+   -------------------------------------------------------------------------- */
+
+.ag-map {
+  width: 470px;
+  background: var(--ag-surface);
+  border: 1px solid var(--ag-line-soft);
+  border-radius: 18px;
+  padding: 18px;
+  box-shadow: var(--ag-shadow-pop);
+  box-sizing: border-box;
+}
+.ag-map__head {
+  display: flex; align-items: center; gap: 10px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid #e6eada;
+}
+.ag-map__date { font-family: var(--ag-font-num); font-size: 25px; }
+.ag-map__wd,
+.ag-map__count { font-size: 13px; color: var(--ag-ink-2); }
+.ag-map__count { font-size: 12.5px; }
+.ag-map__canvas {
+  position: relative;
+  height: 520px;
+  margin-top: 14px;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #eceada;
+}
+.ag-map__legend { display: flex; gap: 16px; margin-top: 12px; font-size: 12px; color: var(--ag-ink-2); }
+.ag-map__legend span { display: flex; align-items: center; gap: 6px; }
+.ag-map__legend i {
+  width: 10px; height: 10px;
+  clip-path: polygon(50% 0%, 100% 34%, 50% 100%, 0% 34%);
+}
+.ag-map__legend .is-spot { background: var(--ag-gem-spot-body); }
+.ag-map__legend .is-food { background: var(--ag-gem-food-body); }
+.ag-map__legend .is-sel  { background: var(--ag-gem-sel-body); }
+.ag-map__hint { margin-top: 12px; text-align: center; font-size: 12.5px; color: var(--ag-ink-2); }
+
+/* --------------------------------------------------------------------------
+   捲軸
+   -------------------------------------------------------------------------- */
+
+.ag-backlog__track::-webkit-scrollbar,
+.ag-days::-webkit-scrollbar { height: 8px; }
+.ag-backlog__track::-webkit-scrollbar-thumb,
+.ag-days::-webkit-scrollbar-thumb { background: #c3cbb0; border-radius: 8px; }
+.ag-backlog__track::-webkit-scrollbar-track,
+.ag-days::-webkit-scrollbar-track { background: transparent; }
+
+
+/* ============ 保留：航班·飯店 / 購物清單分頁、手機版、工具類（沿用 v1 樣式，本次改版未涉及） ============ */
+* { box-sizing: border-box; }
+html, body, #root { height: 100%; margin: 0; }
+body { font-family: var(--ag-font-ui); }
+
+.logi-section { display: flex; flex-direction: column; gap: 14px; }
+.logi-group-label { font-family: 'Fraunces', serif; font-size: 15px; font-weight: 600; color: #33392A; margin-bottom: 2px; }
+.logi-list { display: flex; flex-direction: column; gap: 9px; }
+.logi-card { display: flex; gap: 10px; background: #fff; border: 1px solid #D8D2AC; border-radius: 10px; padding: 10px 12px; align-items: flex-start; }
+.logi-card.editing { flex-direction: column; align-items: stretch; border-color: #C1524A; }
+.logi-icon { width: 30px; height: 30px; border-radius: 8px; background: #E4DEC0; display: flex; align-items: center; justify-content: center; color: #33392A; flex: none; }
+.logi-main { flex: 1; min-width: 0; }
+.logi-top-row { display: flex; align-items: center; gap: 8px; margin-bottom: 2px; }
+.logi-date { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #C1524A; }
+.logi-tag { font-size: 10.5px; background: #E7E2C7; color: #5C5A40; padding: 1px 6px; border-radius: 4px; }
+.logi-title { font-size: 14px; font-weight: 600; }
+.logi-sub { font-size: 12px; color: #807A54; margin-top: 1px; }
+.logi-actions { display: flex; gap: 2px; flex: none; }
+.logi-edit-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 6px; }
+.logi-edit-grid input, .logi-note-input { border: 1px solid #D8D2AC; border-radius: 6px; padding: 6px 8px; font-size: 12.5px; font-family: 'IBM Plex Sans', sans-serif; margin-bottom: 6px; width: 100%; }
+.logi-save { justify-content: center; background: #C1524A; color: #fff; padding: 7px; border-radius: 6px; }
+.logi-save:hover { background: #8B4A3A; color: #fff; }
+.logi-add { display: flex; align-items: center; gap: 5px; border: 1px dashed #C7C09E; background: transparent; color: #807A54; font-size: 12.5px; padding: 8px; border-radius: 8px; cursor: pointer; justify-content: center; }
+.logi-add:hover { border-color: #E0A93A; color: #C1524A; }
+.icon-btn { border: none; background: transparent; color: #A8A17E; cursor: pointer; padding: 2px; display: flex; align-items: center; gap: 4px; border-radius: 4px; }
+.icon-btn:hover { background: #E7E2C7; color: #33392A; }
+.edit-btn { margin-left: auto; }
+.edit-btn:hover { color: #E0A93A; }
+.map-btn:hover { color: #C1524A; }
+.del-btn:hover { color: #8B4A3A; }
+
+.shop-section { max-width: 420px; }
+.shop-progress { font-size: 12px; color: #807A54; margin-bottom: 10px; }
+.shop-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
+.shop-row { display: flex; align-items: center; gap: 9px; background: #fff; border: 1px solid #D8D2AC; border-radius: 8px; padding: 8px 10px; }
+.shop-check { width: 18px; height: 18px; border-radius: 5px; border: 1.5px solid #A8A17E; background: transparent; display: flex; align-items: center; justify-content: center; color: #fff; cursor: pointer; flex: none; }
+.shop-check.checked { background: #C1524A; border-color: #C1524A; }
+.shop-text { flex: 1; font-size: 13.5px; }
+.shop-text.checked { text-decoration: line-through; color: #A8A17E; }
+
+/* 手機版與待排清單卡片仍使用的舊版卡片系統（本次改版未觸及） */
+.card { background: #fff; border: 1px solid #D8D2AC; border-radius: 8px; padding: 8px 9px 9px; cursor: pointer; }
+.card:active { cursor: grabbing; }
+.card.important { background: #FBF0D9; border-color: #E0A93A; }
+.card.editing { cursor: default; border-color: #C1524A; }
+.card.auto { background: #F7F4E8; border: 1.5px dashed #C7C09E; cursor: default; }
+.card.transit { border-style: dashed; border-color: #A9C7C4; background: #F0F5F0; }
+.card-kind-tag { display: flex; align-items: center; gap: 3px; font-size: 9.5px; background: #E4DEC0; color: #5C5A40; padding: 2px 6px; border-radius: 4px; }
+.card-top { display: flex; align-items: center; gap: 6px; margin-bottom: 3px; }
+.grip { color: #A8A17E; padding: 8px; margin: -8px; }
+.transit-icon { color: #5C8A5F; flex: none; }
+.card-time { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #C1524A; background: #F3DAD6; padding: 1px 5px; border-radius: 4px; }
+.map-index-badge { width: 16px; height: 16px; border-radius: 50%; background: #C1524A; color: #fff; font-size: 9.5px; display: flex; align-items: center; justify-content: center; flex: none; }
+.toggle-badge { width: 17px; height: 17px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; flex: none; }
+.book-badge { border: 1.5px solid #D8D2AC; color: #D8D2AC; }
+.book-badge.on { border-color: #5C8A5F; background: #5C8A5F; color: #fff; }
+.card-name { font-size: 13.5px; font-weight: 500; line-height: 1.35; }
+.card-note { font-size: 11.5px; color: #807A54; margin-top: 2px; }
+.night-strip { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #5C5A40; padding-top: 6px; margin-top: 2px; border-top: 1px dashed #C7C09E; cursor: pointer; }
+.night-strip:hover { color: #33392A; }
+.edit-row { display: flex; gap: 6px; margin-bottom: 6px; }
+.edit-time { width: 70px; border: 1px solid #C1524A; border-radius: 6px; padding: 5px 7px; font-size: 12.5px; font-family: 'IBM Plex Sans', sans-serif; }
+.edit-name { width: 100%; border: 1px solid #C1524A; border-radius: 6px; padding: 5px 7px; font-size: 13px; font-weight: 500; font-family: 'IBM Plex Sans', sans-serif; margin-bottom: 6px; box-sizing: border-box; }
+.edit-note { width: 100%; border: 1px solid #D8D2AC; border-radius: 6px; padding: 5px 7px; font-size: 12px; font-family: 'IBM Plex Sans', sans-serif; box-sizing: border-box; }
+.save-btn { margin-left: auto; background: #C1524A; color: #fff; border-radius: 5px; padding: 4px 6px; }
+.add-row { display: flex; align-items: center; gap: 5px; border: 1px dashed #C7C09E; background: transparent; color: #807A54; font-size: 12px; padding: 7px; border-radius: 7px; cursor: pointer; justify-content: center; }
+.add-row:hover { border-color: #E0A93A; color: #A9791F; }
+.add-form input { width: 100%; border: 1px solid #E0A93A; border-radius: 7px; padding: 7px 8px; font-size: 12.5px; font-family: 'IBM Plex Sans', sans-serif; }
+
+.mobile-wrap { max-width: 380px; margin: 0 auto; }
+.day-tabs { display: flex; gap: 8px; overflow-x: auto; margin-bottom: 14px; scroll-snap-type: x mandatory; scrollbar-width: none; -ms-overflow-style: none; }
+.day-tabs::-webkit-scrollbar { display: none; }
+.day-tab { flex: 0 0 auto; border: 1px solid #C7C09E; background: #fff; border-radius: 8px; padding: 6px 10px; text-align: center; cursor: pointer; font-family: 'Fraunces', serif; scroll-snap-align: start; }
+.day-tab.active { background: #33392A; border-color: #33392A; }
+.day-tab .md { font-size: 14px; font-weight: 600; color: #33392A; }
+.day-tab.active .md { color: #D8DEC4; }
+.day-tab .wd { font-size: 9.5px; color: #807A54; font-family: 'IBM Plex Sans', sans-serif; }
+.day-tab.active .wd { color: #DAD6B6; }
+.mobile-list { display: flex; flex-direction: column; gap: 9px; padding-bottom: 76px; }
+.empty-note { font-size: 12px; color: #8F8964; padding: 8px 2px 12px; }
+.mobile-map-fab { position: fixed; right: 16px; bottom: 16px; width: 52px; height: 52px; border-radius: 50%; background: #33392A; display: flex; align-items: center; justify-content: center; box-shadow: 0 3px 10px rgba(51,57,42,0.35); z-index: 30; border: none; cursor: pointer; }
+.mobile-map-overlay { position: fixed; inset: 0; background: #D8DEC4; z-index: 100; display: flex; flex-direction: column; }
+.mobile-map-close { position: absolute; top: 14px; left: 14px; width: 36px; height: 36px; border-radius: 50%; background: rgba(51,57,42,0.75); color: #D8DEC4; display: flex; align-items: center; justify-content: center; z-index: 5; border: none; cursor: pointer; }
+.mobile-map-canvas-wrap { flex: 1; min-height: 0; }
+.mobile-map-canvas-wrap .map-canvas-el { height: 100%; border-radius: 0; min-height: 0; }
+.mobile-map-bottom { background: #fff; border-top: 1px solid #C7C09E; padding: 10px 12px 16px; }
+.mobile-map-days { display: flex; gap: 6px; overflow-x: auto; margin-bottom: 8px; }
+.mobile-map-days::-webkit-scrollbar { display: none; }
+.mobile-map-mini-list { display: flex; gap: 8px; overflow-x: auto; }
+.mobile-map-mini-list::-webkit-scrollbar { display: none; }
+.mobile-map-mini-card { flex: 0 0 auto; background: #fff; border: 1px solid #D8D2AC; border-radius: 8px; padding: 8px 10px; display: flex; align-items: center; gap: 8px; cursor: pointer; max-width: 220px; }
+.mobile-map-mini-num { width: 18px; height: 18px; border-radius: 50%; background: #C1524A; color: #fff; font-size: 10px; display: flex; align-items: center; justify-content: center; flex: none; }
+.mobile-map-mini-name { font-size: 12.5px; color: #33392A; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mobile-map-mini-time { font-size: 10.5px; color: #807A54; flex: none; }
+.mobile-map-empty { font-size: 12px; color: #8F8964; padding: 6px 2px; }
+
+.setup-panel { background: #F2F0E2; border: 1px solid #C7C09E; border-radius: 10px; padding: 12px 14px; margin-bottom: 16px; display: flex; align-items: flex-end; gap: 14px; flex-wrap: wrap; }
+.setup-field { display: flex; flex-direction: column; gap: 4px; }
+.setup-field label { font-size: 11px; color: #807A54; }
+.setup-field input { border: 1px solid #C7C09E; border-radius: 6px; padding: 6px 8px; font-family: 'IBM Plex Sans', sans-serif; font-size: 12.5px; }
+.setup-close { margin-left: auto; border: none; background: #33392A; color: #D8DEC4; border-radius: 6px; padding: 7px 12px; font-size: 12.5px; cursor: pointer; }
+
+.drag-zone.drag-over { outline: 2px dashed #C1524A; outline-offset: 2px; border-radius: 10px; }
+.loading-screen, .error-screen { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: var(--ag-bg); color: var(--ag-ink); font-family: var(--ag-font-ui); text-align: center; padding: 20px; }
+.error-screen pre { background: #fff; padding: 10px; border-radius: 8px; font-size: 11px; max-width: 500px; overflow: auto; text-align: left; }
+
 </style>
 </head>
 <body>
@@ -314,15 +816,26 @@ const Check = (p) => <Icon {...p}><path d="M20 6 9 17l-5-5" /></Icon>;
 const Plus = (p) => <Icon {...p}><path d="M12 5v14" /><path d="M5 12h14" /></Icon>;
 const Star = (p) => <Icon {...p}><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2Z" /></Icon>;
 const Bus = (p) => <Icon {...p}><rect x="3" y="5" width="18" height="12" rx="2" /><path d="M3 11h18" /><circle cx="7.5" cy="17.5" r="1.5" /><circle cx="16.5" cy="17.5" r="1.5" /></Icon>;
-const Gem = ({ size = 16 }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24">
-    <path d="M9 3h6l6 6-9 12L3 9Z" fill="#D97706" />
-    <path d="M9 3h6l3 6H6Z" fill="#FCD34D" />
-    <path d="M3 9h6l3 12Z" fill="#D97706" />
-    <path d="M21 9h-6l-3 12Z" fill="#B8860B" />
-    <path d="M9 3 6 9M15 3l3 6M12 21 6 9M12 21l6-12" stroke="#8A5C04" strokeWidth="0.5" fill="none" opacity="0.5" />
-  </svg>
+const Gem = ({ size = 26, kind = "spot" }) => (
+  <span className={`ag-gem ag-gem--${size} ag-gem--${kind}`}>
+    <i className="ag-gem__ring"></i>
+    <i className="ag-gem__body"></i>
+    <i className="ag-gem__facet"></i>
+    <i className="ag-gem__shine"></i>
+    <i className="ag-gem__ring ag-gem__ring--front"></i>
+  </span>
 );
+const AgLogo = ({ size }) => (
+  <span className={`ag-logo ${size ? "ag-logo--" + size : ""}`}>
+    <Gem size={size === "lg" ? 42 : size === "sm" ? 18 : 26} kind="spot" />
+    <span className="ag-logo__word">a<em>G</em>emda</span>
+  </span>
+);
+function guessGemKind(item) {
+  const text = ((item && item.note) || "").toLowerCase();
+  const foodWords = ["餐廳", "咖啡", "拉麵", "燒肉", "居酒屋", "甜點", "烘焙", "酒吧", "牛丼", "壽司", "丼", "カフェ", "restaurant", "cafe", "coffee", "bar", "bakery", "ramen", "izakaya", "bistro", "food", "dining", "dessert", "noodle", "tea room"];
+  return foodWords.some((w) => text.includes(w)) ? "food" : "spot";
+}
 const Monitor = (p) => <Icon {...p}><rect x="2" y="3" width="20" height="14" rx="2" /><path d="M8 21h8" /><path d="M12 17v4" /></Icon>;
 const Smartphone = (p) => <Icon {...p}><rect x="6" y="2" width="12" height="20" rx="2" /><path d="M11 18h2" /></Icon>;
 const Plane = (p) => <Icon {...p}><path d="M22 2 11 13" /><path d="M22 2 15 22l-4-9-9-4Z" /></Icon>;
@@ -339,10 +852,23 @@ const hotelToDb = (d) => ({ name: d.name, address: d.address, checkin: d.checkin
 const itemFromDb = (r) => ({ id: r.id, day: r.day, time: r.time || "", name: r.name, note: r.note || "", nameEn: r.name_en || "", noteEn: r.note_en || "", sortOrder: r.sort_order ?? 0, lat: r.lat ?? null, lng: r.lng ?? null, booked: !!r.booked, important: !!r.important, isTransit: !!r.is_transit });
 
 /* ============ 行程卡片 ============ */
-function ItemCard({ item, lang, T, draggable, onDragStart, onDragEnd, onMapClick, onDelete, onToggleBooked, onToggleImportant, isEditing, onEditStart, onEditSave }) {
+function ItemCard({ item, lang, T, variant, draggable, onDragStart, onDragEnd, onMapClick, onDelete, onToggleBooked, onToggleImportant, isEditing, onEditStart, onEditSave }) {
   const [draft, setDraft] = useState({ time: item.time, name: item.name, note: item.note });
   const tt = T || STRINGS.zh;
+  const isAg = variant === "ag";
   if (isEditing) {
+    if (isAg) {
+      return (
+        <div className="ag-item ag-item--editing">
+          <div className="ag-field-row">
+            <input className="ag-field" value={draft.time} onChange={(e) => setDraft({ ...draft, time: e.target.value })} placeholder={tt.fTime} />
+            <button className="ag-confirm" onClick={() => onEditSave(item.id, draft)}><Check size={14} /></button>
+          </div>
+          <input className="ag-field ag-field--title" style={{ marginBottom: 9 }} value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} placeholder={tt.itemName} autoFocus />
+          <input className="ag-field" value={draft.note} onChange={(e) => setDraft({ ...draft, note: e.target.value })} placeholder={tt.itemNote} />
+        </div>
+      );
+    }
     return (
       <div className="card editing">
         <div className="edit-row">
@@ -352,6 +878,29 @@ function ItemCard({ item, lang, T, draggable, onDragStart, onDragEnd, onMapClick
         <input className="edit-name" value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} placeholder={tt.itemName} autoFocus />
         <input className="edit-note" value={draft.note} onChange={(e) => setDraft({ ...draft, note: e.target.value })} placeholder={tt.itemNote} />
       </div>
+    );
+  }
+  if (isAg) {
+    const gemKind = guessGemKind(item);
+    return (
+      <article className={`ag-item ${item.important ? "ag-item--mark" : ""}`} draggable={draggable} onDragStart={draggable ? (e) => onDragStart(e, item.id) : undefined} onDragEnd={draggable ? onDragEnd : undefined} onClick={() => onToggleImportant(item.id)}>
+        <header className="ag-item__bar">
+          {draggable && <span className="ag-item__grip"><GripVertical size={14} /></span>}
+          {item.isTransit && <Bus size={14} />}
+          {item.mapIndex != null && !item.isTransit && <span className="ag-item__n">{item.mapIndex}</span>}
+          {item.time && <span className="ag-item__n" style={{ fontFamily: "var(--ag-font-num)", fontWeight: 400, fontSize: 13 }}>{item.time}</span>}
+          <button className={`ag-item__check ${item.booked ? "is-done" : ""}`} title={tt.booked} onClick={(e) => { e.stopPropagation(); onToggleBooked(item.id); }}>
+            <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"></circle><path d="M5.4 8.2 7.2 10l3.4-3.6"></path></svg>
+          </button>
+          <span className="ag-item__acts">
+            <button title={tt.edit} onClick={(e) => { e.stopPropagation(); onEditStart(item.id); }}><Pencil size={13} /></button>
+            {!item.isTransit && <button title={tt.openInMaps} onClick={(e) => { e.stopPropagation(); onMapClick(item.name); }}><MapPin size={13} /></button>}
+            <button title={tt.delete} onClick={(e) => { e.stopPropagation(); onDelete(item.id); }}><XIcon size={13} /></button>
+          </span>
+        </header>
+        <h4 className="ag-item__title">{item.name}</h4>
+        {item.note && <p className="ag-item__sub">{item.note}</p>}
+      </article>
     );
   }
   return (
@@ -378,9 +927,26 @@ function ItemCard({ item, lang, T, draggable, onDragStart, onDragEnd, onMapClick
   );
 }
 
-function AutoItemCard({ item, T, onMapClick, onDelete }) {
+function AutoItemCard({ item, T, variant, onMapClick, onDelete }) {
   const tt = T || STRINGS.zh;
   const IconC = item.kind === "flight" ? Plane : Building2;
+  if (variant === "ag") {
+    return (
+      <article className="ag-item">
+        <header className="ag-item__bar">
+          <span className="ag-chip"><IconC size={11} /> {item.tagLabel}</span>
+          {item.time && <span className="ag-time">{item.time}</span>}
+          <span className="ag-item__acts">
+            <button title={tt.editFlightHotel} onClick={item.onEdit}><Pencil size={13} /></button>
+            {item.mapQuery && <button title={tt.openInMaps} onClick={() => onMapClick(item.mapQuery)}><MapPin size={13} /></button>}
+            <button title={tt.deleteFlightHotel} onClick={item.onDelete}><XIcon size={13} /></button>
+          </span>
+        </header>
+        <h4 className="ag-item__title">{item.name}</h4>
+        {item.note && <p className="ag-item__sub">{item.note}</p>}
+      </article>
+    );
+  }
   return (
     <div className="card auto">
       <div className="card-top">
@@ -396,8 +962,15 @@ function AutoItemCard({ item, T, onMapClick, onDelete }) {
   );
 }
 
-function NightlyHotelStrip({ hotel, T, onMapClick }) {
+function NightlyHotelStrip({ hotel, T, variant, onMapClick }) {
   const tt = T || STRINGS.zh;
+  if (variant === "ag") {
+    return (
+      <div className="ag-day__foot" onClick={() => onMapClick(hotel.address || hotel.name)} style={{ cursor: "pointer" }}>
+        <Building2 size={14} /><span>{tt.nightlyPrefix}{hotel.name || tt.unnamedHotel}</span>
+      </div>
+    );
+  }
   return (
     <div className="night-strip" onClick={() => onMapClick(hotel.address || hotel.name)}>
       <Building2 size={11} /><span>{tt.nightlyPrefix}{hotel.name || tt.unnamedHotel}</span>
@@ -405,13 +978,14 @@ function NightlyHotelStrip({ hotel, T, onMapClick }) {
   );
 }
 
-function AddInline({ onAdd, placeholder, inputPlaceholder }) {
+function AddInline({ onAdd, placeholder, inputPlaceholder, variant, wide }) {
   const [open, setOpen] = useState(false);
   const [val, setVal] = useState("");
-  if (!open) return <button className="add-row" onClick={() => setOpen(true)}><Plus size={13} /> {placeholder}</button>;
+  const isAg = variant === "ag";
+  if (!open) return <button className={isAg ? `ag-add ${wide ? "ag-add--wide" : ""}` : "add-row"} onClick={() => setOpen(true)}><Plus size={13} /> {placeholder}</button>;
   return (
-    <form className="add-form" onSubmit={(e) => { e.preventDefault(); if (val.trim()) onAdd(val.trim()); setVal(""); setOpen(false); }}>
-      <input autoFocus value={val} onChange={(e) => setVal(e.target.value)} placeholder={inputPlaceholder} onBlur={() => { if (!val.trim()) setOpen(false); }} />
+    <form className={isAg ? "" : "add-form"} onSubmit={(e) => { e.preventDefault(); if (val.trim()) onAdd(val.trim()); setVal(""); setOpen(false); }}>
+      <input className={isAg ? "ag-field" : ""} autoFocus value={val} onChange={(e) => setVal(e.target.value)} placeholder={inputPlaceholder} onBlur={() => { if (!val.trim()) setOpen(false); }} />
     </form>
   );
 }
@@ -879,33 +1453,37 @@ function App() {
 
   return (
     <div className="wrap">
-      <div className="topbar">
-        <div className="title">
-          {T.appTitle}
-          <span className="sub">
-            {tripStart.slice(5).replace("-", "/")}–{tripEnd.slice(5).replace("-", "/")}
-            <button onClick={() => setShowSetup((s) => !s)}>{T.editDays}</button>
-            <button onClick={handleBackfillLocations}>{T.backfill}</button>
-            {backfillStatus && <span style={{ marginLeft: 6 }}>{backfillStatus}</span>}
-          </span>
-        </div>
-        <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-          <div className="toggle">
-            <button className={lang === "zh" ? "active" : ""} onClick={() => setLang("zh")}>中文</button>
-            <button className={lang === "en" ? "active" : ""} onClick={() => setLang("en")}>EN</button>
+      <div className="ag-app">
+        <div className="ag-shell">
+          <div className="ag-header">
+            <div className="ag-header__left">
+              <div className="ag-header__title">
+                <AgLogo />
+                <span className="ag-daterange">{tripStart.slice(5).replace("-", "/")} – {tripEnd.slice(5).replace("-", "/")}</span>
+              </div>
+              <div className="ag-header__links">
+                <a onClick={() => setShowSetup((s) => !s)}>{T.editDays}</a>
+                <a onClick={handleBackfillLocations}>{T.backfill}</a>
+                {backfillStatus && <span style={{ fontSize: 12.5, color: "var(--ag-ink-3)" }}>{backfillStatus}</span>}
+              </div>
+            </div>
+            <div className="ag-header__tools">
+              <div className="ag-toggle">
+                <button className={lang === "zh" ? "is-on" : ""} onClick={() => setLang("zh")}>中文</button>
+                <button className={lang === "en" ? "is-on" : ""} onClick={() => setLang("en")}>EN</button>
+              </div>
+              <div className="ag-toggle">
+                <button className={!isMobile ? "is-on" : ""} onClick={() => setViewMode("desktop")}><Monitor size={13} /> {T.desktopView}</button>
+                <button className={isMobile ? "is-on" : ""} onClick={() => setViewMode("mobile")}><Smartphone size={13} /> {T.mobileView}</button>
+              </div>
+            </div>
           </div>
-          <div className="toggle">
-            <button className={!isMobile ? "active" : ""} onClick={() => setViewMode("desktop")}><Monitor size={13} /> {T.desktopView}</button>
-            <button className={isMobile ? "active" : ""} onClick={() => setViewMode("mobile")}><Smartphone size={13} /> {T.mobileView}</button>
-          </div>
-        </div>
-      </div>
 
-      <div className="section-tabs">
-        <button className={`section-tab ${section === "itinerary" ? "active" : ""}`} onClick={() => setSection("itinerary")}><ListChecks size={13} /> {T.tabItinerary}</button>
-        <button className={`section-tab ${section === "logistics" ? "active" : ""}`} onClick={() => setSection("logistics")}><Plane size={13} /> {T.tabLogistics}</button>
-        <button className={`section-tab ${section === "shopping" ? "active" : ""}`} onClick={() => setSection("shopping")}><ShoppingBag size={13} /> {T.tabShopping}</button>
-      </div>
+          <div className="ag-tabs">
+            <button className={`ag-tab ${section === "itinerary" ? "is-active" : ""}`} onClick={() => setSection("itinerary")}><ListChecks size={13} /> {T.tabItinerary}</button>
+            <button className={`ag-tab ${section === "logistics" ? "is-active" : ""}`} onClick={() => setSection("logistics")}><Plane size={13} /> {T.tabLogistics}</button>
+            <button className={`ag-tab ${section === "shopping" ? "is-active" : ""}`} onClick={() => setSection("shopping")}><ShoppingBag size={13} /> {T.tabShopping}</button>
+          </div>
 
       {showSetup && section === "itinerary" && (
         <div className="setup-panel">
@@ -915,7 +1493,109 @@ function App() {
         </div>
       )}
 
-      {section === "itinerary" && (
+      {section === "itinerary" && !isMobile && (
+        <div className="ag-body">
+          <div className="ag-main">
+            <div
+              className="ag-backlog"
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={(e) => handleDropOnDay(e, null)}
+            >
+              <div className="ag-backlog__head">
+                <ListChecks size={15} />
+                <span className="ag-backlog__title">{T.inboxLabel}</span>
+                {inboxItems.length > 0 && <span className="ag-backlog__count">{inboxItems.length}</span>}
+              </div>
+              {inboxItems.length === 0 ? (
+                <div className="ag-backlog__note">{T.inboxEmpty}</div>
+              ) : (
+                <div className="ag-backlog__track" ref={inboxListRef} data-day="">
+                  {inboxItems.map((it) => (
+                    <div key={it.id} data-item-id={it.id} onDragOver={(e) => e.preventDefault()} onDrop={(e) => handleDropBeforeCard(e, null, it.id)}>
+                      <ItemCard
+                        item={displayItem(it)}
+                        lang={lang}
+                        T={T}
+                        variant="ag"
+                        draggable={editingId !== it.id}
+                        onDragStart={handleDragStart}
+                        onDragEnd={handleDragEnd}
+                        onMapClick={handleMapClick}
+                        onDelete={handleDelete}
+                        onToggleBooked={handleToggleBooked}
+                        onToggleImportant={handleToggleImportant}
+                        isEditing={editingId === it.id}
+                        onEditStart={setEditingId}
+                        onEditSave={handleEditSave}
+                      />
+                    </div>
+                  ))}
+                  <AddInline onAdd={handleAddInbox} placeholder={T.addToInbox} inputPlaceholder={T.inputContent} variant="ag" wide />
+                </div>
+              )}
+              {inboxItems.length === 0 && (
+                <div style={{ marginTop: 10 }}>
+                  <AddInline onAdd={handleAddInbox} placeholder={T.addToInbox} inputPlaceholder={T.inputContent} variant="ag" />
+                </div>
+              )}
+            </div>
+
+            <div className="ag-days" ref={desktopGridRef}>
+              {days.map((d, dayIdx) => (
+                <div key={d.key} className={`ag-day ${mapOpen && dayIdx === mapDayIdx ? "ag-day--active" : ""}`} onDragOver={(e) => e.preventDefault()} onDrop={(e) => handleDropOnDay(e, d.key)}>
+                  <div className="ag-day__head" onClick={() => setMapDayIdx(dayIdx)} style={{ cursor: "pointer" }}>
+                    <span className="ag-day__date">{d.md}</span>
+                    <span className="ag-day__wd">{weekdayLabel(d.weekdayIndex, lang)}</span>
+                    {mapOpen && dayIdx === mapDayIdx && <span className="ag-day__badge">選取中</span>}
+                  </div>
+                  <div className="ag-day__list">
+                    {getDayCards(d.key).auto.map((it) => (
+                      <AutoItemCard key={it.id} item={it} T={T} variant="ag" onMapClick={handleMapClick} />
+                    ))}
+                    {getDayCards(d.key).manual.map((it) => (
+                      <div key={it.id} onDragOver={(e) => e.preventDefault()} onDrop={(e) => handleDropBeforeCard(e, d.key, it.id)}>
+                        <ItemCard item={it} lang={lang} T={T} variant="ag" draggable={editingId !== it.id} onDragStart={handleDragStart} onDragEnd={handleDragEnd} onMapClick={handleMapClick} onDelete={handleDelete} onToggleBooked={handleToggleBooked} onToggleImportant={handleToggleImportant} isEditing={editingId === it.id} onEditStart={setEditingId} onEditSave={handleEditSave} />
+                      </div>
+                    ))}
+                    <div className="ag-addrow">
+                      <AddInline onAdd={(name) => handleAdd(d.key, name)} placeholder={T.addItem} inputPlaceholder={T.inputContent} variant="ag" />
+                      <AddInline onAdd={(name) => handleAddTransit(d.key, name)} placeholder={T.addTransit} inputPlaceholder={T.inputContent} variant="ag" />
+                    </div>
+                  </div>
+                  {getDayCards(d.key).nightly.map((h) => <NightlyHotelStrip key={`night-${h.id}-${d.key}`} hotel={h} T={T} variant="ag" onMapClick={handleMapClick} />)}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="ag-maprail">
+            <button className="ag-maprail__tab" onClick={() => setMapOpen((o) => !o)}>
+              {mapOpen ? T.collapseMap : T.expandMap}
+            </button>
+          </div>
+
+          {mapOpen && (
+            <div className="ag-map" style={{ position: "absolute", right: 44, top: 0 }}>
+              <div className="ag-map__head">
+                <span className="ag-map__date">{days[mapDayIdx] ? days[mapDayIdx].md : ""}</span>
+                <span className="ag-map__wd">{days[mapDayIdx] ? weekdayLabel(days[mapDayIdx].weekdayIndex, lang) : ""}</span>
+                <span className="ag-map__count" style={{ marginLeft: "auto" }}>{mapPoints.length}</span>
+                <button className="ag-item__acts" style={{ border: "none", background: "none", cursor: "pointer" }} onClick={() => setMapOpen(false)}><XIcon size={16} /></button>
+              </div>
+              <div className="ag-map__canvas">
+                <div ref={mapDivRef} style={{ width: "100%", height: "100%" }}></div>
+              </div>
+              <div className="ag-map__legend">
+                <span><i className="is-spot"></i>景點</span>
+                <span><i className="is-food"></i>餐飲</span>
+              </div>
+              <div className="ag-map__hint">{T.mapHint}</div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {section === "itinerary" && isMobile && (
         <div
           className="inbox-shelf"
           onDragOver={(e) => e.preventDefault()}
@@ -953,49 +1633,8 @@ function App() {
         </div>
       )}
 
-      {section === "itinerary" && (
-        !isMobile ? (
-          <div className="desktop-grid-wrap">
-            <div className={`map-tab ${mapOpen ? "open" : ""}`} onClick={() => setMapOpen((o) => !o)}>
-              {mapOpen ? T.collapseMap : T.expandMap}
-            </div>
-            <div className="itinerary-split">
-              <div className="itinerary-left">
-                <div className="desktop-grid" ref={desktopGridRef}>
-                  {days.map((d, dayIdx) => (
-                    <div key={d.key} className={`day-col ${mapOpen && dayIdx === mapDayIdx ? "map-selected" : ""}`} onDragOver={(e) => e.preventDefault()} onDrop={(e) => handleDropOnDay(e, d.key)}>
-                      <div className="day-head" onClick={() => setMapDayIdx(dayIdx)}><span className="md">{d.md}</span><span className="wd">{weekdayLabel(d.weekdayIndex, lang)}</span></div>
-                      <div className="day-body">
-                        {getDayCards(d.key).auto.map((it) => (
-                          <AutoItemCard key={it.id} item={it} T={T} onMapClick={handleMapClick} />
-                        ))}
-                        {getDayCards(d.key).manual.map((it) => (
-                          <div key={it.id} onDragOver={(e) => e.preventDefault()} onDrop={(e) => handleDropBeforeCard(e, d.key, it.id)}>
-                            <ItemCard item={it} lang={lang} T={T} draggable={editingId !== it.id} onDragStart={handleDragStart} onDragEnd={handleDragEnd} onMapClick={handleMapClick} onDelete={handleDelete} onToggleBooked={handleToggleBooked} onToggleImportant={handleToggleImportant} isEditing={editingId === it.id} onEditStart={setEditingId} onEditSave={handleEditSave} />
-                          </div>
-                        ))}
-                        <AddInline onAdd={(name) => handleAdd(d.key, name)} placeholder={T.addItem} inputPlaceholder={T.inputContent} />
-                        <AddInline onAdd={(name) => handleAddTransit(d.key, name)} placeholder={T.addTransit} inputPlaceholder={T.inputContent} />
-                        {getDayCards(d.key).nightly.map((h) => <NightlyHotelStrip key={`night-${h.id}-${d.key}`} hotel={h} T={T} onMapClick={handleMapClick} />)}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              {mapOpen && (
-                <div className="map-panel-side">
-                  <div className="map-panel-head">
-                    <span className="md">{days[mapDayIdx] ? `${days[mapDayIdx].md} ${weekdayLabel(days[mapDayIdx].weekdayIndex, lang)}` : ""}</span>
-                    <button className="map-panel-close" onClick={() => setMapOpen(false)}><XIcon size={15} /></button>
-                  </div>
-                  <div ref={mapDivRef} className="map-canvas-el"></div>
-                  <div className="map-hint">{T.mapHint}</div>
-                </div>
-              )}
-            </div>
-          </div>
-        ) : (
-          <React.Fragment>
+      {section === "itinerary" && isMobile && (
+        <React.Fragment>
             <div className="mobile-wrap">
               <div className="day-tabs">
                 {days.map((d, i) => (
@@ -1055,11 +1694,10 @@ function App() {
               </div>
             )}
           </React.Fragment>
-        )
       )}
 
       {section === "logistics" && (
-        <div className={isMobile ? "mobile-wrap" : ""}>
+        <div className={isMobile ? "mobile-wrap" : ""} style={isMobile ? {} : { padding: "24px 36px 28px" }}>
           <div className="logi-section">
             <div>
               <div className="logi-group-label">{T.flightGroup}</div>
@@ -1080,12 +1718,14 @@ function App() {
       )}
 
       {section === "shopping" && (
-        <div className={isMobile ? "mobile-wrap" : "shop-section"}>
+        <div className={isMobile ? "mobile-wrap" : "shop-section"} style={isMobile ? {} : { padding: "24px 36px 28px" }}>
           <div className="shop-progress">{lang === "en" ? `${shoppingDone} / ${shopping.length} done` : `已完成 ${shoppingDone} / ${shopping.length}`}</div>
           <div className="shop-list">{shopping.map((s) => <ShoppingRow key={s.id} item={s} T={T} onToggle={handleToggleShopping} onDelete={handleDeleteShopping} />)}</div>
           <AddInline onAdd={handleAddShopping} placeholder={T.shoppingAdd} inputPlaceholder={T.inputContent} />
         </div>
       )}
+        </div>
+      </div>
     </div>
   );
 }

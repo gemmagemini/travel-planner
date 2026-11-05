@@ -789,6 +789,29 @@ body { font-family: var(--ag-font-ui); }
 .setup-field input { border: 1px solid var(--ag-line); border-radius: 8px; padding: 6px 8px; font-family: var(--ag-font-ui); font-size: 12.5px; }
 .setup-close { margin-left: auto; border: none; background: var(--ag-dark); color: var(--ag-ink-on-dark); border-radius: 8px; padding: 7px 12px; font-size: 12.5px; cursor: pointer; }
 
+/* 旅程切換列 */
+.ag-tripbar { display: flex; align-items: center; gap: 10px; padding: 0 36px 14px; }
+.ag-tripbar--mobile { max-width: 380px; margin: 0 auto; padding: 0 14px 12px; }
+.ag-tripselect {
+  flex: 1 1 auto; min-width: 0; max-width: 340px;
+  border: 1px solid var(--ag-line-soft); border-radius: var(--ag-r-pill);
+  background: var(--ag-surface); color: var(--ag-ink);
+  padding: 7px 14px; font: inherit; font-size: 13.5px; cursor: pointer;
+}
+.setup-field input[type="text"] { border: 1px solid var(--ag-line); border-radius: 8px; padding: 6px 8px; font-family: var(--ag-font-ui); font-size: 12.5px; }
+.setup-cancel { border: 1px solid var(--ag-line); background: var(--ag-surface); color: var(--ag-ink-2); border-radius: 8px; padding: 7px 12px; font-size: 12.5px; cursor: pointer; }
+.setup-close:disabled { opacity: .45; cursor: not-allowed; }
+
+/* 登入畫面 */
+.login-screen { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: var(--ag-bg); padding: 20px; font-family: var(--ag-font-ui); }
+.login-card { width: 100%; max-width: 340px; background: var(--ag-surface); border: 1px solid var(--ag-line); border-radius: var(--ag-r-card); padding: 26px 22px; display: flex; flex-direction: column; gap: 12px; }
+.login-card h1 { margin: 0 0 4px; font-family: var(--ag-font-num); font-size: 26px; color: var(--ag-ink); }
+.login-card p { margin: 0 0 6px; font-size: 13px; color: var(--ag-ink-3); }
+.login-card input { border: 1px solid var(--ag-line); border-radius: 10px; padding: 10px 12px; font: inherit; font-size: 15px; }
+.login-card button { border: 0; border-radius: 10px; padding: 11px; background: var(--ag-dark); color: var(--ag-ink-on-dark); font: inherit; font-size: 15px; cursor: pointer; }
+.login-card button:disabled { opacity: .5; }
+.login-error { font-size: 12.5px; color: var(--ag-accent); }
+
 .drag-zone.drag-over { outline: 2px dashed var(--ag-accent); outline-offset: 2px; border-radius: var(--ag-r-item); }
 .loading-screen, .error-screen { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: var(--ag-bg); color: var(--ag-ink); font-family: var(--ag-font-ui); text-align: center; padding: 20px; }
 .error-screen pre { background: var(--ag-surface); padding: 10px; border-radius: 8px; font-size: 11px; max-width: 500px; overflow: auto; text-align: left; }
@@ -814,6 +837,8 @@ const WEEKDAY_EN = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const STRINGS = {
   zh: {
     appTitle: "行程規劃", editDays: "編輯天數", tripDateLabel: "旅遊日期：", backfill: "補齊座標／翻譯",
+    tripName: "旅程名稱", newTrip: "新增旅程", newTripDefault: "新的旅程", createTrip: "建立", cancel: "取消",
+    exportBackup: "匯出備份", signOut: "登出", exporting: "備份中…",
     backfilling: "補資料中…", desktopView: "電腦版", mobileView: "手機版",
     tabItinerary: "行程", tabLogistics: "航班・飯店", tabShopping: "購物清單",
     departureDate: "出發日期", returnDate: "回程日期", done: "完成",
@@ -840,6 +865,8 @@ const STRINGS = {
   },
   en: {
     appTitle: "Itinerary", editDays: "Edit dates", tripDateLabel: "Trip dates: ", backfill: "Fill coords & translation",
+    tripName: "Trip name", newTrip: "New trip", newTripDefault: "New trip", createTrip: "Create", cancel: "Cancel",
+    exportBackup: "Export backup", signOut: "Sign out", exporting: "Exporting…",
     backfilling: "Updating…", desktopView: "Desktop", mobileView: "Mobile",
     tabItinerary: "Itinerary", tabLogistics: "Flights & Hotels", tabShopping: "Shopping List",
     departureDate: "Start date", returnDate: "End date", done: "Done",
@@ -913,6 +940,8 @@ const MapPin = (p) => <Icon {...p}><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0
 const Pencil = (p) => <Icon {...p}><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" /></Icon>;
 const XIcon = (p) => <Icon {...p}><path d="M18 6 6 18" /><path d="M6 6l12 12" /></Icon>;
 const Check = (p) => <Icon {...p}><path d="M20 6 9 17l-5-5" /></Icon>;
+const Download = (p) => <Icon {...p}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><path d="M7 10l5 5 5-5" /><path d="M12 15V3" /></Icon>;
+const LogOut = (p) => <Icon {...p}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><path d="M16 17l5-5-5-5" /><path d="M21 12H9" /></Icon>;
 const Plus = (p) => <Icon {...p}><path d="M12 5v14" /><path d="M5 12h14" /></Icon>;
 const Star = (p) => <Icon {...p}><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2Z" /></Icon>;
 const Sparkles = (p) => <Icon {...p}><path d="M12 3v4M12 17v4M5 5l2.5 2.5M16.5 16.5 19 19M3 12h4M17 12h4M5 19l2.5-2.5M16.5 7.5 19 5" /><circle cx="12" cy="12" r="2.4" /></Icon>;
@@ -1179,10 +1208,14 @@ function ShoppingRow({ item, onToggle, onDelete }) {
 }
 
 /* ============ 主程式 ============ */
-function App() {
+function App({ onSignOut }) {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
   const [tripId, setTripId] = useState(null);
+  const [trips, setTrips] = useState([]);
+  const [tripName, setTripName] = useState("");
+  const [showNewTrip, setShowNewTrip] = useState(false);
+  const [newTrip, setNewTrip] = useState({ name: "", start: "", end: "" });
   const [tripStart, setTripStart] = useState("2026-09-16");
   const [tripEnd, setTripEnd] = useState("2026-09-24");
   const [items, setItems] = useState([]);
@@ -1240,38 +1273,52 @@ function App() {
     return viewMode === "mobile" && section === "itinerary";
   }
 
+  // 讀取某一趟旅程的全部資料（行程、航班、飯店、購物清單）
+  const loadTripData = async (trip) => {
+    const [itemsRes, flightsRes, hotelsRes, shopRes] = await Promise.all([
+      db.from("itinerary_items").select("*").eq("trip_id", trip.id),
+      db.from("flights").select("*").eq("trip_id", trip.id),
+      db.from("hotels").select("*").eq("trip_id", trip.id),
+      db.from("shopping_items").select("*").eq("trip_id", trip.id),
+    ]);
+    if (itemsRes.error) throw itemsRes.error;
+    if (flightsRes.error) throw flightsRes.error;
+    if (hotelsRes.error) throw hotelsRes.error;
+    if (shopRes.error) throw shopRes.error;
+
+    setTripId(trip.id);
+    setTripName(trip.name || "");
+    setTripStart(trip.start_date);
+    setTripEnd(trip.end_date);
+    setItems(itemsRes.data.map(itemFromDb));
+    setFlights(flightsRes.data.map(flightFromDb));
+    setHotels(hotelsRes.data.map(hotelFromDb));
+    setShopping(shopRes.data);
+    // 換旅程時把畫面狀態歸零
+    setActiveDayIdx(0);
+    setMapDayIdx(0);
+    setEditingId(null);
+    setShowSetup(false);
+    setShowNewTrip(false);
+    try { localStorage.setItem("agemda_trip_id", trip.id); } catch (e) {}
+  };
+
   useEffect(() => {
     (async () => {
       try {
-        let { data: trips, error: tripErr } = await db.from("trips").select("*").order("created_at").limit(1);
+        let { data: tripRows, error: tripErr } = await db.from("trips").select("*").order("created_at");
         if (tripErr) throw tripErr;
-        let trip;
-        if (!trips || trips.length === 0) {
+        if (!tripRows || tripRows.length === 0) {
           const { data: created, error: createErr } = await db.from("trips").insert({ name: "我的旅程", start_date: tripStart, end_date: tripEnd }).select().single();
           if (createErr) throw createErr;
-          trip = created;
-        } else {
-          trip = trips[0];
+          tripRows = [created];
         }
-        setTripId(trip.id);
-        setTripStart(trip.start_date);
-        setTripEnd(trip.end_date);
-
-        const [itemsRes, flightsRes, hotelsRes, shopRes] = await Promise.all([
-          db.from("itinerary_items").select("*").eq("trip_id", trip.id),
-          db.from("flights").select("*").eq("trip_id", trip.id),
-          db.from("hotels").select("*").eq("trip_id", trip.id),
-          db.from("shopping_items").select("*").eq("trip_id", trip.id),
-        ]);
-        if (itemsRes.error) throw itemsRes.error;
-        if (flightsRes.error) throw flightsRes.error;
-        if (hotelsRes.error) throw hotelsRes.error;
-        if (shopRes.error) throw shopRes.error;
-
-        setItems(itemsRes.data.map(itemFromDb));
-        setFlights(flightsRes.data.map(flightFromDb));
-        setHotels(hotelsRes.data.map(hotelFromDb));
-        setShopping(shopRes.data);
+        setTrips(tripRows);
+        // 優先回到上次看的旅程；沒有的話就開最早建立的那一趟（原本的旅程）
+        let saved = null;
+        try { saved = localStorage.getItem("agemda_trip_id"); } catch (e) {}
+        const trip = tripRows.find((t) => t.id === saved) || tripRows[0];
+        await loadTripData(trip);
         setLoading(false);
       } catch (e) {
         setLoadError(e);
@@ -1279,6 +1326,63 @@ function App() {
       }
     })();
   }, []);
+
+  const handleSwitchTrip = async (id) => {
+    const trip = trips.find((t) => t.id === id);
+    if (!trip || id === tripId) return;
+    try {
+      await loadTripData(trip);
+    } catch (e) {
+      setLoadError(e);
+    }
+  };
+
+  const handleCreateTrip = async () => {
+    const name = (newTrip.name || "").trim() || T.newTripDefault;
+    if (!newTrip.start || !newTrip.end || newTrip.end < newTrip.start) return;
+    const { data, error } = await db.from("trips").insert({ name, start_date: newTrip.start, end_date: newTrip.end }).select().single();
+    if (error) { setLoadError(error); return; }
+    setTrips((prev) => [...prev, data]);
+    try {
+      await loadTripData(data);
+    } catch (e) {
+      setLoadError(e);
+    }
+  };
+
+  const handleTripNameChange = async (val) => {
+    setTripName(val);
+    setTrips((prev) => prev.map((t) => (t.id === tripId ? { ...t, name: val } : t)));
+  };
+  const handleTripNameSave = async () => {
+    if (tripId) await db.from("trips").update({ name: tripName }).eq("id", tripId);
+  };
+
+  const [exportStatus, setExportStatus] = useState("");
+  const handleExportBackup = async () => {
+    setExportStatus(T.exporting);
+    try {
+      const tables = ["trips", "itinerary_items", "flights", "hotels", "shopping_items"];
+      const out = { exported_at: new Date().toISOString() };
+      for (const t of tables) {
+        const { data, error } = await db.from(t).select("*");
+        if (error) throw error;
+        out[t] = data;
+      }
+      const blob = new Blob([JSON.stringify(out, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "aGemda-backup-" + new Date().toISOString().slice(0, 10) + ".json";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+      setExportStatus("");
+    } catch (e) {
+      setExportStatus((lang === "en" ? "Error: " : "發生錯誤：") + String(e.message || e));
+    }
+  };
 
   const days = useMemo(() => buildDays(tripStart, tripEnd), [tripStart, tripEnd]);
 
@@ -1504,10 +1608,12 @@ function App() {
   /* ---- 旅程日期 ---- */
   const handleTripStartChange = async (val) => {
     setTripStart(val);
+    setTrips((prev) => prev.map((t) => (t.id === tripId ? { ...t, start_date: val } : t)));
     if (tripId) await db.from("trips").update({ start_date: val }).eq("id", tripId);
   };
   const handleTripEndChange = async (val) => {
     setTripEnd(val);
+    setTrips((prev) => prev.map((t) => (t.id === tripId ? { ...t, end_date: val } : t)));
     if (tripId) await db.from("trips").update({ end_date: val }).eq("id", tripId);
   };
 
@@ -1591,8 +1697,39 @@ function App() {
                   <button className={!isMobile ? "is-on" : ""} onClick={() => setViewMode("desktop")}><Monitor size={13} /> {T.desktopView}</button>
                   <button className={isMobile ? "is-on" : ""} onClick={() => setViewMode("mobile")}><Smartphone size={13} /> {T.mobileView}</button>
                 </div>
-              )}            </div>
+              )}
+              <button className="ag-backfill-btn" title={exportStatus || T.exportBackup} onClick={handleExportBackup}>
+                <Download size={13} />{!isMobile && <> {T.exportBackup}</>}
+              </button>
+              {!isMobile && exportStatus && <span className="ag-backfill-status">{exportStatus}</span>}
+              {onSignOut && (
+                <button className="ag-backfill-btn" title={T.signOut} onClick={onSignOut}>
+                  <LogOut size={13} />{!isMobile && <> {T.signOut}</>}
+                </button>
+              )}
+            </div>
           </div>
+
+          <div className={`ag-tripbar ${isMobile ? "ag-tripbar--mobile" : ""}`}>
+            <select className="ag-tripselect" value={tripId || ""} onChange={(e) => handleSwitchTrip(e.target.value)}>
+              {[...trips].sort((a, b) => (b.start_date || "").localeCompare(a.start_date || "")).map((t) => (
+                <option key={t.id} value={t.id}>{t.name || T.newTripDefault}（{(t.start_date || "").slice(0, 4)}）</option>
+              ))}
+            </select>
+            <button className="ag-backfill-btn" onClick={() => { setNewTrip({ name: "", start: "", end: "" }); setShowNewTrip((v) => !v); setShowSetup(false); }}>
+              <Plus size={13} /> {T.newTrip}
+            </button>
+          </div>
+
+          {showNewTrip && (
+            <div className={`setup-panel ${isMobile ? "setup-panel--mobile" : ""}`}>
+              <div className="setup-field"><label>{T.tripName}</label><input type="text" value={newTrip.name} placeholder={T.newTripDefault} onChange={(e) => setNewTrip({ ...newTrip, name: e.target.value })} /></div>
+              <div className="setup-field"><label>{T.departureDate}</label><input type="date" value={newTrip.start} onChange={(e) => setNewTrip({ ...newTrip, start: e.target.value, end: newTrip.end && newTrip.end < e.target.value ? e.target.value : newTrip.end })} /></div>
+              <div className="setup-field"><label>{T.returnDate}</label><input type="date" min={newTrip.start} value={newTrip.end} onChange={(e) => setNewTrip({ ...newTrip, end: e.target.value })} /></div>
+              <button className="setup-close" disabled={!newTrip.start || !newTrip.end} onClick={handleCreateTrip}>{T.createTrip}</button>
+              <button className="setup-cancel" onClick={() => setShowNewTrip(false)}>{T.cancel}</button>
+            </div>
+          )}
 
           <div className={`ag-triprow ${isMobile ? "ag-triprow--mobile" : ""}`}>
             <span className="ag-triprow__label">{T.tripDateLabel}</span>
@@ -1602,9 +1739,10 @@ function App() {
 
       {showSetup && (
         <div className={`setup-panel ${isMobile ? "setup-panel--mobile" : ""}`}>
+          <div className="setup-field"><label>{T.tripName}</label><input type="text" value={tripName} onChange={(e) => handleTripNameChange(e.target.value)} onBlur={handleTripNameSave} /></div>
           <div className="setup-field"><label>{T.departureDate}</label><input type="date" value={tripStart} onChange={(e) => handleTripStartChange(e.target.value)} /></div>
           <div className="setup-field"><label>{T.returnDate}</label><input type="date" value={tripEnd} onChange={(e) => handleTripEndChange(e.target.value)} /></div>
-          <button className="setup-close" onClick={() => setShowSetup(false)}>{T.done}</button>
+          <button className="setup-close" onClick={() => { handleTripNameSave(); setShowSetup(false); }}>{T.done}</button>
         </div>
       )}
 
@@ -1847,7 +1985,51 @@ function App() {
   );
 }
 
-ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+/* ============ 登入 ============ */
+function LoginScreen() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+
+  const submit = async (e) => {
+    e.preventDefault();
+    setBusy(true);
+    setErr("");
+    const { error } = await db.auth.signInWithPassword({ email: email.trim(), password });
+    if (error) setErr("登入失敗，請確認 email 和密碼是否正確。");
+    setBusy(false);
+  };
+
+  return (
+    <div className="login-screen">
+      <form className="login-card" onSubmit={submit}>
+        <h1>aGemda</h1>
+        <p>請登入以查看旅程</p>
+        <input type="email" autoComplete="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+        <input type="password" autoComplete="current-password" placeholder="密碼" value={password} onChange={(e) => setPassword(e.target.value)} required />
+        {err && <div className="login-error">{err}</div>}
+        <button type="submit" disabled={busy}>{busy ? "登入中…" : "登入"}</button>
+      </form>
+    </div>
+  );
+}
+
+function Root() {
+  const [session, setSession] = useState(undefined);
+  useEffect(() => {
+    db.auth.getSession().then(({ data }) => setSession(data.session || null));
+    const { data: sub } = db.auth.onAuthStateChange((_event, s) => setSession(s || null));
+    return () => sub.subscription.unsubscribe();
+  }, []);
+
+  if (session === undefined) return <div className="loading-screen">載入中…</div>;
+  if (!session) return <LoginScreen />;
+  // key 綁 user id：登出再換別人登入時，整個 App 重新載入
+  return <App key={session.user.id} onSignOut={() => db.auth.signOut()} />;
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<Root />);
 </script>
 <script>
   (function () {

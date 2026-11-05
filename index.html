@@ -816,6 +816,259 @@ body { font-family: var(--ag-font-ui); }
 .loading-screen, .error-screen { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: var(--ag-bg); color: var(--ag-ink); font-family: var(--ag-font-ui); text-align: center; padding: 20px; }
 .error-screen pre { background: var(--ag-surface); padding: 10px; border-radius: 8px; font-size: 11px; max-width: 500px; overflow: auto; text-align: left; }
 
+
+/* ==========================================================================
+   多旅程版面：電腦版 B（左側欄＋主區）／手機版 C（我的旅程 → 單日 → 切換面板）
+   ========================================================================== */
+
+.ag-dot { display: inline-block; border-radius: 50%; flex: none; }
+
+/* ---------- 共用：底部面板／置中視窗 ---------- */
+.sheet-wrap, .modal-wrap { position: fixed; inset: 0; z-index: 200; display: flex; }
+.sheet-wrap { align-items: flex-end; justify-content: center; }
+.modal-wrap { align-items: center; justify-content: center; }
+.sheet-mask { position: absolute; inset: 0; background: rgba(47,51,39,.42); }
+.sheet {
+  position: relative; width: 100%; max-width: 520px; max-height: 86dvh; overflow-y: auto;
+  background: var(--ag-surface); border-radius: 22px 22px 0 0;
+  padding: 8px 18px calc(22px + env(safe-area-inset-bottom));
+  box-shadow: 0 -10px 40px rgba(47,51,39,.2);
+}
+.sheet-grab { width: 38px; height: 4px; border-radius: 4px; background: var(--ag-line-add); margin: 4px auto 12px; }
+.sheet-head { font-size: 16px; font-weight: 700; margin: 0 0 12px; }
+.modal {
+  position: relative; width: min(440px, calc(100vw - 32px)); max-height: 86vh; overflow-y: auto;
+  background: var(--ag-surface); border-radius: var(--ag-r-panel); padding: 22px 24px;
+  box-shadow: var(--ag-shadow-pop);
+}
+.form-grid { display: flex; flex-direction: column; gap: 12px; }
+.form-grid .setup-field input { width: 100%; box-sizing: border-box; padding: 10px 12px; font-size: 15px; }
+.form-btns { display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px; }
+.setup-close, .setup-cancel {
+  border-radius: var(--ag-r-pill); padding: 9px 18px; font: inherit; font-size: 14px; cursor: pointer;
+}
+.setup-close { background: var(--ag-dark); color: var(--ag-ink-on-dark); border: 1px solid var(--ag-dark); }
+.setup-close:disabled { opacity: .45; cursor: default; }
+.setup-cancel { background: transparent; color: var(--ag-ink-2); border: 1px solid var(--ag-line-add); }
+
+.qa { display: flex; gap: 10px; }
+.qa input { flex: 1; min-width: 0; border: 1px solid var(--ag-line); border-radius: 12px; padding: 12px; font: inherit; font-size: 16px; }
+.qa button { border: 0; border-radius: 12px; padding: 0 18px; background: var(--ag-dark); color: var(--ag-ink-on-dark); font: inherit; font-size: 15px; }
+.qa button:disabled { opacity: .45; }
+
+/* ---------- 帳號選單 ---------- */
+.acct { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.acct__label { font-size: 11px; letter-spacing: .06em; color: var(--ag-ink-3); margin-bottom: 4px; }
+.acct__member { display: flex; align-items: center; gap: 10px; padding: 6px 2px 10px; }
+.acct__av, .ag-av {
+  width: 32px; height: 32px; border-radius: 50%; flex: none;
+  background: var(--ag-gem-spot-body); color: #fff; font-weight: 700; font-size: 14px;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.acct__who { display: flex; flex-direction: column; min-width: 0; }
+.acct__name { font-size: 13.5px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; }
+.acct__sub { font-size: 11.5px; color: var(--ag-ink-3); }
+.acct__row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 6px 2px; font-size: 13.5px; }
+.acct__seg { display: inline-flex; background: var(--ag-surface-sunk); border-radius: var(--ag-r-pill); padding: 3px; }
+.acct__seg button { border: 0; background: transparent; font: inherit; font-size: 12.5px; padding: 5px 11px; border-radius: var(--ag-r-pill); color: var(--ag-ink-2); cursor: pointer; }
+.acct__seg button.is-on { background: var(--ag-surface); color: var(--ag-ink); box-shadow: var(--ag-shadow-tab); font-weight: 600; }
+.acct__hr { height: 1px; background: var(--ag-line-soft); margin: 8px 0; }
+.acct__item {
+  display: flex; align-items: center; gap: 10px; width: 100%; text-align: left;
+  background: transparent; border: 0; border-radius: 10px; padding: 12px 8px; font: inherit; font-size: 14.5px; color: var(--ag-ink); cursor: pointer;
+}
+.acct__item:hover { background: var(--ag-surface-alt); }
+.acct__item small { margin-left: auto; font-size: 11.5px; color: var(--ag-ink-3); }
+.acct__item--danger { color: var(--ag-accent); }
+.acct__note { font-size: 12px; color: var(--ag-ink-3); padding: 2px 8px 6px; }
+
+/* ==========================================================================
+   電腦版 B
+   ========================================================================== */
+
+.ag-app--side { display: flex; max-width: none; height: 100vh; margin: 0; }
+.ag-side {
+  flex: 0 0 264px; display: flex; flex-direction: column; height: 100vh; box-sizing: border-box;
+  background: var(--ag-surface-alt); border-right: 1px solid var(--ag-line);
+}
+.ag-side__logo { padding: 26px 22px 18px; }
+.ag-side__list { flex: 1; min-height: 0; overflow-y: auto; padding: 0 12px 12px; }
+.ag-side__group { margin-bottom: 14px; }
+.ag-side__label { font-size: 11px; letter-spacing: .08em; color: var(--ag-ink-3); padding: 6px 10px; }
+.ag-trip {
+  display: flex; align-items: center; gap: 10px; width: 100%; text-align: left;
+  background: transparent; border: 0; border-radius: 12px; padding: 10px; font: inherit; color: var(--ag-ink); cursor: pointer;
+}
+.ag-trip:hover { background: var(--ag-surface-sunk); }
+.ag-trip.is-cur { background: var(--ag-dark); color: var(--ag-ink-on-dark); }
+.ag-trip__txt { display: flex; flex-direction: column; min-width: 0; }
+.ag-trip__name { font-size: 14px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ag-trip__sub { font-size: 11.5px; color: var(--ag-ink-3); }
+.ag-trip.is-cur .ag-trip__sub { color: var(--ag-ink-on-dark-2); }
+.ag-side__new {
+  display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; margin-top: 4px;
+  background: transparent; border: 1px dashed var(--ag-line-add); border-radius: 12px; padding: 10px; font: inherit; font-size: 13.5px; color: var(--ag-ink-2); cursor: pointer;
+}
+.ag-side__new:hover { border-color: var(--ag-accent); color: var(--ag-accent); }
+.ag-side__acct { position: relative; border-top: 1px solid var(--ag-line-soft); padding: 12px; }
+.ag-acctbtn { display: flex; align-items: center; gap: 10px; width: 100%; background: transparent; border: 0; border-radius: 12px; padding: 6px; font: inherit; text-align: left; cursor: pointer; color: var(--ag-ink); }
+.ag-acctbtn:hover { background: var(--ag-surface-sunk); }
+.ag-acctbtn__txt { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.ag-acctbtn__name { font-size: 13.5px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ag-acctbtn__sub { font-size: 11.5px; color: var(--ag-ink-3); }
+.ag-acctbtn__caret { color: var(--ag-ink-3); }
+.ag-backdrop { position: fixed; inset: 0; z-index: 90; }
+.ag-popup {
+  position: absolute; left: 12px; width: 300px; box-sizing: border-box; bottom: calc(100% - 4px); z-index: 91;
+  background: var(--ag-surface); border: 1px solid var(--ag-line); border-radius: 16px; padding: 14px; box-shadow: var(--ag-shadow-pop);
+}
+
+.ag-pane { flex: 1; min-width: 0; height: 100vh; overflow-y: auto; }
+.ag-pane__head { padding: 26px 36px 0; }
+.ag-crumb { font-size: 12.5px; color: var(--ag-ink-3); margin-bottom: 8px; }
+.ag-titlerow { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.ag-title { margin: 0; font-size: 26px; font-weight: 700; }
+.ag-title__range { font-family: var(--ag-font-num); font-size: 18px; color: var(--ag-ink-2); }
+.ag-title__stats { font-size: 12.5px; color: var(--ag-ink-3); }
+.ag-titlerow__btns { margin-left: auto; display: inline-flex; align-items: center; gap: 10px; }
+.ag-mapbtn {
+  display: inline-flex; align-items: center; gap: 6px; background: var(--ag-surface); border: 1px solid var(--ag-line-add);
+  border-radius: var(--ag-r-pill); padding: 6px 13px; font: inherit; font-size: 12.5px; color: var(--ag-ink-2); cursor: pointer;
+}
+.ag-mapbtn:hover { border-color: var(--ag-accent); color: var(--ag-accent); }
+.ag-utabs { display: flex; gap: 6px; margin-top: 18px; border-bottom: 1px solid var(--ag-line-soft); }
+.ag-utab {
+  display: inline-flex; align-items: center; gap: 7px; background: transparent; border: 0; border-bottom: 2px solid transparent;
+  padding: 10px 14px; margin-bottom: -1px; font: inherit; font-size: 14px; color: var(--ag-ink-3); cursor: pointer;
+}
+.ag-utab:hover { color: var(--ag-ink); }
+.ag-utab.is-active { color: var(--ag-ink); font-weight: 600; border-bottom-color: var(--ag-dark); }
+.ag-pane__body { padding-bottom: 28px; }
+.ag-maprail:not(.ag-maprail--open) { display: none; }
+.ag-maprail__tab { display: none; }
+
+/* ==========================================================================
+   手機版 C
+   ========================================================================== */
+
+/* ---- C1 我的旅程 ---- */
+.mob-page { max-width: 520px; margin: 0 auto; padding: 0 16px calc(32px + env(safe-area-inset-bottom)); min-height: 100dvh; box-sizing: border-box; }
+.mob-topbar { display: flex; align-items: center; justify-content: space-between; padding: calc(14px + env(safe-area-inset-top)) 0 6px; }
+.mob-avatar { width: 34px; height: 34px; border-radius: 50%; border: 0; background: var(--ag-gem-spot-body); color: #fff; font: inherit; font-weight: 700; font-size: 14px; cursor: pointer; }
+.mob-h1 { margin: 10px 0 16px; font-size: 28px; font-weight: 700; }
+.mob-next { background: var(--ag-dark); color: var(--ag-ink-on-dark); border-radius: 20px; padding: 18px 18px 16px; margin-bottom: 18px; }
+.mob-next__eyebrow { font-size: 12px; color: var(--ag-ink-on-dark-2); letter-spacing: .04em; }
+.mob-next__name { font-size: 22px; font-weight: 700; margin-top: 6px; }
+.mob-next__range { font-family: var(--ag-font-num); font-size: 20px; margin-top: 4px; }
+.mob-next__stat { font-size: 12.5px; color: var(--ag-ink-on-dark-2); margin-top: 2px; }
+.mob-cta {
+  display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; box-sizing: border-box;
+  margin-top: 14px; padding: 12px; border: 0; border-radius: 14px; background: var(--ag-surface); color: var(--ag-ink);
+  font: inherit; font-size: 15px; font-weight: 600; cursor: pointer;
+}
+.sheet .mob-cta { background: var(--ag-dark); color: var(--ag-ink-on-dark); }
+.mob-filter { display: flex; gap: 8px; margin-bottom: 12px; }
+.mob-filter button { border: 1px solid var(--ag-line-add); background: transparent; border-radius: var(--ag-r-pill); padding: 6px 14px; font: inherit; font-size: 13px; color: var(--ag-ink-2); cursor: pointer; }
+.mob-filter button.is-on { background: var(--ag-dark); border-color: var(--ag-dark); color: var(--ag-ink-on-dark); }
+.mob-triplist { display: flex; flex-direction: column; gap: 10px; }
+.mob-trip {
+  display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; box-sizing: border-box;
+  background: var(--ag-surface); border: 1px solid var(--ag-line); border-radius: var(--ag-r-card); padding: 12px; font: inherit; color: var(--ag-ink); cursor: pointer;
+}
+.mob-trip__thumb { width: 44px; height: 44px; border-radius: 12px; background: #fbefd2; display: inline-flex; align-items: center; justify-content: center; flex: none; }
+.mob-trip__thumb.is-past { background: #dcebe5; }
+.mob-trip__txt { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.mob-trip__name { font-size: 15px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mob-trip__range { font-family: var(--ag-font-num); font-size: 14px; color: var(--ag-ink-2); }
+.mob-trip__stat { font-size: 11.5px; color: var(--ag-ink-3); }
+.mob-pill { flex: none; font-size: 11.5px; padding: 4px 10px; border-radius: var(--ag-r-pill); background: #fbefd2; color: #8a5f12; }
+.mob-pill.is-past { background: #dcebe5; color: #2e5d4f; }
+.mob-newtrip { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 14px; background: transparent; border: 1px dashed var(--ag-line-add); border-radius: var(--ag-r-card); font: inherit; font-size: 14px; color: var(--ag-ink-2); cursor: pointer; }
+
+/* ---- C2 旅程內 ---- */
+.mob-shell { display: flex; flex-direction: column; height: 100dvh; max-width: 520px; margin: 0 auto; position: relative; background: var(--ag-bg); }
+.mob-tophead { display: flex; align-items: center; gap: 10px; padding: calc(10px + env(safe-area-inset-top)) 14px 8px; }
+.mob-round { flex: none; width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--ag-line); background: var(--ag-surface); font: inherit; font-size: 20px; line-height: 1; color: var(--ag-ink); cursor: pointer; }
+.mob-titlebtn { flex: 1; min-width: 0; background: transparent; border: 0; font: inherit; color: var(--ag-ink); text-align: center; cursor: pointer; display: flex; flex-direction: column; align-items: center; }
+.mob-titlebtn__name { font-size: 16px; font-weight: 700; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mob-caret { font-size: 11px; color: var(--ag-ink-3); }
+.mob-titlebtn__range { font-family: var(--ag-font-num); font-size: 13px; color: var(--ag-ink-3); }
+.mob-days { flex: none; display: flex; gap: 8px; overflow-x: auto; padding: 4px 16px 10px; scrollbar-width: none; }
+.mob-days::-webkit-scrollbar { display: none; }
+.mob-daypill {
+  flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; min-width: 54px; padding: 7px 10px;
+  background: var(--ag-surface-alt); border: 1px solid var(--ag-line); border-radius: 14px; font: inherit; color: var(--ag-ink); cursor: pointer;
+}
+.mob-daypill__d { font-family: var(--ag-font-num); font-size: 17px; line-height: 1.1; }
+.mob-daypill__w { font-size: 11px; color: var(--ag-ink-3); }
+.mob-daypill.is-on { background: var(--ag-dark); border-color: var(--ag-dark); color: var(--ag-ink-on-dark); }
+.mob-daypill.is-on .mob-daypill__w { color: var(--ag-ink-on-dark-2); }
+.mob-scroll { flex: 1; min-height: 0; overflow-y: auto; padding: 4px 16px 110px; -webkit-overflow-scrolling: touch; }
+.mob-inbox {
+  display: flex; align-items: center; gap: 8px; width: 100%; box-sizing: border-box; margin-bottom: 14px;
+  background: var(--ag-surface-alt); border: 1px solid var(--ag-line); border-radius: 14px; padding: 12px 14px; font: inherit; font-size: 14px; color: var(--ag-ink); cursor: pointer;
+}
+.mob-inbox__t { font-weight: 600; }
+.mob-inbox__n { margin-left: auto; font-size: 12.5px; color: var(--ag-ink-3); }
+.mob-inbox__go { color: var(--ag-ink-3); font-size: 18px; line-height: 1; }
+.mob-dayhead { display: flex; align-items: baseline; gap: 10px; margin: 4px 2px 12px; }
+.mob-dayhead__date { font-family: var(--ag-font-num); font-size: 30px; line-height: 1; }
+.mob-dayhead__meta { font-size: 13px; color: var(--ag-ink-3); }
+.mob-list { padding-bottom: 12px; gap: 10px; }
+.mob-night { margin-top: 10px; }
+.mob-fab {
+  position: absolute; right: 18px; bottom: calc(78px + env(safe-area-inset-bottom)); z-index: 20;
+  width: 54px; height: 54px; border-radius: 50%; border: 0; background: var(--ag-accent); color: #fff;
+  display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 16px rgba(176,71,61,.4); cursor: pointer;
+}
+.mob-tabbar {
+  flex: none; display: flex; background: var(--ag-surface); border-top: 1px solid var(--ag-line);
+  padding: 6px 6px calc(6px + env(safe-area-inset-bottom));
+}
+.mob-tabbar button { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; background: transparent; border: 0; padding: 6px 0; font: inherit; font-size: 11px; color: var(--ag-ink-3); cursor: pointer; }
+.mob-tabbar button.is-on { color: var(--ag-dark); font-weight: 700; }
+.mob-tabbar button.is-on svg { color: var(--ag-gem-spot-body); }
+
+.mob-mapwrap { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.mob-mapcanvas { flex: 1; min-height: 0; background: var(--ag-dark); }
+.mob-mapcanvas .map-canvas-el { border-radius: 0; min-height: 0; }
+.mob-mapnote { flex: none; padding: 10px 14px 12px; background: var(--ag-surface); border-top: 1px solid var(--ag-line); }
+
+/* ---- 手機卡片（點一下展開動作） ---- */
+.mob-item { background: var(--ag-surface); border: 1px solid var(--ag-line); border-radius: var(--ag-r-item); padding: 12px; }
+.mob-item.is-mark { background: var(--ag-mark-bg); border-color: var(--ag-mark-line); }
+.mob-item__row { display: flex; align-items: center; gap: 10px; }
+.mob-item__ic { width: 22px; height: 22px; flex: none; border-radius: 50%; background: var(--ag-surface-sunk); color: var(--ag-ink-2); display: inline-flex; align-items: center; justify-content: center; }
+.mob-item__ic--none { background: transparent; border: 1px dashed var(--ag-line-add); }
+.mob-item__main { flex: 1; min-width: 0; }
+.mob-item__title { font-size: 15px; font-weight: 600; line-height: 1.35; word-break: break-word; }
+.mob-item__sub { font-size: 12.5px; color: var(--ag-ink-3); margin-top: 2px; }
+.mob-item__time { font-family: var(--ag-font-num); color: var(--ag-ink-2); }
+.mob-item__done { flex: none; width: 20px; height: 20px; border-radius: 50%; background: var(--ag-check-done); color: #fff; display: inline-flex; align-items: center; justify-content: center; }
+.mob-item__grip { flex: none; color: var(--ag-line-add); display: inline-flex; }
+.mob-item__acts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--ag-line-dash); }
+.mob-act {
+  display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px; background: var(--ag-surface-alt); border: 1px solid var(--ag-line);
+  border-radius: var(--ag-r-pill); font: inherit; font-size: 13px; color: var(--ag-ink-2); cursor: pointer;
+}
+.mob-act.is-done { background: var(--ag-check-done); border-color: var(--ag-check-done); color: #fff; }
+.mob-act.is-on { background: var(--ag-mark-bg); border-color: var(--ag-mark-line); color: var(--ag-mark-ink); }
+.mob-act--del { color: var(--ag-accent); }
+.mob-assign { flex: 1 0 100%; border: 1px solid var(--ag-line); border-radius: 12px; padding: 10px; font: inherit; font-size: 14px; background: var(--ag-surface); color: var(--ag-ink); }
+.mob-inboxlist { display: flex; flex-direction: column; gap: 10px; }
+
+/* ---- C3 切換面板 ---- */
+.sw-group { margin-bottom: 10px; }
+.sw-row { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; background: transparent; border: 0; border-radius: 12px; padding: 12px 8px; font: inherit; color: var(--ag-ink); cursor: pointer; }
+.sw-row.is-cur { background: var(--ag-surface-alt); }
+.sw-row__txt { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.sw-row__name { font-size: 15px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sw-row__sub { font-size: 12px; color: var(--ag-ink-3); }
+.sw-row__check { color: var(--ag-check-done); display: inline-flex; }
+.sw-link { display: block; width: 100%; margin-top: 8px; background: transparent; border: 0; padding: 10px; font: inherit; font-size: 14px; color: var(--ag-ink-2); text-decoration: underline; cursor: pointer; }
+
+/* 手機版內，航班飯店／購物清單區塊不要沿用電腦版的 36px 邊距 */
+.mob-scroll .mobile-wrap { max-width: none; padding: 0; }
 </style>
 </head>
 <body>
@@ -839,6 +1092,10 @@ const STRINGS = {
     appTitle: "行程規劃", editDays: "編輯天數", tripDateLabel: "旅遊日期：", backfill: "補齊座標／翻譯",
     tripName: "旅程名稱", newTrip: "新增旅程", newTripDefault: "新的旅程", createTrip: "建立", cancel: "取消",
     exportBackup: "匯出備份", signOut: "登出", exporting: "備份中…",
+    layoutAuto: "自動", language: "語言", layout: "版面", collab: "共同編輯", you: "你 · 可編輯所有旅程", allTrips: "全部旅程",
+    upcoming: "即將出發", pastTrips: "已結束", myTrips: "我的旅程", nextTripLabel: "下一趟", continuePlan: "繼續規劃 →",
+    filterAll: "全部", switchTrip: "切換旅程", manage: "管理", backHome: "回到「我的旅程」", tabShop: "購物", tabMapShort: "地圖",
+    inboxEntry: "待排清單", editTrip: "編輯旅程", mark: "標記", tonight: "今晚住宿", inInbox: "待排清單", ok: "確定", more: "更多", back: "返回", assignTo: "排到哪一天",
     backfilling: "補資料中…", desktopView: "電腦版", mobileView: "手機版",
     tabItinerary: "行程", tabLogistics: "航班・飯店", tabShopping: "購物清單",
     departureDate: "出發日期", returnDate: "回程日期", done: "完成",
@@ -867,6 +1124,10 @@ const STRINGS = {
     appTitle: "Itinerary", editDays: "Edit dates", tripDateLabel: "Trip dates: ", backfill: "Fill coords & translation",
     tripName: "Trip name", newTrip: "New trip", newTripDefault: "New trip", createTrip: "Create", cancel: "Cancel",
     exportBackup: "Export backup", signOut: "Sign out", exporting: "Exporting…",
+    layoutAuto: "Auto", language: "Language", layout: "Layout", collab: "Shared editing", you: "You · can edit all trips", allTrips: "All trips",
+    upcoming: "Upcoming", pastTrips: "Past", myTrips: "My trips", nextTripLabel: "Next trip", continuePlan: "Keep planning →",
+    filterAll: "All", switchTrip: "Switch trip", manage: "Manage", backHome: "Back to My trips", tabShop: "Shop", tabMapShort: "Map",
+    inboxEntry: "Unscheduled", editTrip: "Edit trip", mark: "Mark", tonight: "Tonight", inInbox: "Unscheduled", ok: "OK", more: "More", back: "Back", assignTo: "Move to day",
     backfilling: "Updating…", desktopView: "Desktop", mobileView: "Mobile",
     tabItinerary: "Itinerary", tabLogistics: "Flights & Hotels", tabShopping: "Shopping List",
     departureDate: "Start date", returnDate: "End date", done: "Done",
@@ -983,8 +1244,9 @@ const hotelToDb = (d) => ({ name: d.name, address: d.address, checkin: d.checkin
 const itemFromDb = (r) => ({ id: r.id, day: r.day, time: r.time || "", name: r.name, note: r.note || "", nameEn: r.name_en || "", noteEn: r.note_en || "", sortOrder: r.sort_order ?? 0, lat: r.lat ?? null, lng: r.lng ?? null, booked: !!r.booked, important: !!r.important, isTransit: !!r.is_transit });
 
 /* ============ 行程卡片 ============ */
-function ItemCard({ item, lang, T, variant, draggable, onDragStart, onDragEnd, onMapClick, onDelete, onToggleBooked, onToggleImportant, isEditing, onEditStart, onEditSave }) {
+function ItemCard({ item, lang, T, variant, draggable, onDragStart, onDragEnd, onMapClick, onDelete, onToggleBooked, onToggleImportant, isEditing, onEditStart, onEditSave, dayOptions, onAssign }) {
   const [draft, setDraft] = useState({ time: item.time, name: item.name, note: item.note });
+  const [open, setOpen] = useState(false);
   const tt = T || STRINGS.zh;
   const isAg = variant === "ag";
   if (isEditing) {
@@ -1009,6 +1271,45 @@ function ItemCard({ item, lang, T, variant, draggable, onDragStart, onDragEnd, o
         <input className="edit-name" value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} placeholder={tt.itemName} autoFocus />
         <input className="edit-note" value={draft.note} onChange={(e) => setDraft({ ...draft, note: e.target.value })} placeholder={tt.itemNote} />
       </div>
+    );
+  }
+  if (variant === "mob") {
+    return (
+      <article className={`mob-item ${item.important ? "is-mark" : ""}`} onClick={() => setOpen((o) => !o)}>
+        <div className="mob-item__row">
+          {item.isTransit
+            ? <span className="mob-item__ic"><Bus size={14} /></span>
+            : item.mapIndex != null
+              ? <span className="ag-item__badge">{item.mapIndex}</span>
+              : <span className="mob-item__ic mob-item__ic--none" />}
+          <div className="mob-item__main">
+            <div className="mob-item__title">{item.name}</div>
+            {(item.time || item.note) && (
+              <div className="mob-item__sub">
+                {item.time && <span className="mob-item__time">{item.time}</span>}
+                {item.time && item.note ? " · " : ""}{item.note}
+              </div>
+            )}
+          </div>
+          {item.booked && <span className="mob-item__done"><Check size={11} /></span>}
+          {draggable && <span className="mob-item__grip"><GripVertical size={16} /></span>}
+        </div>
+        {open && (
+          <div className="mob-item__acts" onClick={(e) => e.stopPropagation()}>
+            <button className={`mob-act ${item.booked ? "is-done" : ""}`} onClick={() => onToggleBooked(item.id)}><Check size={16} /><span>{tt.booked}</span></button>
+            <button className={`mob-act ${item.important ? "is-on" : ""}`} onClick={() => onToggleImportant(item.id)}><Star size={16} /><span>{tt.mark}</span></button>
+            <button className="mob-act" onClick={() => onEditStart(item.id)}><Pencil size={16} /><span>{tt.edit}</span></button>
+            {!item.isTransit && <button className="mob-act" onClick={() => onMapClick(item.name)}><MapPin size={16} /><span>{tt.openInMaps}</span></button>}
+            <button className="mob-act mob-act--del" onClick={() => onDelete(item.id)}><XIcon size={16} /><span>{tt.delete}</span></button>
+            {dayOptions && onAssign && (
+              <select className="mob-assign" value={item.day || ""} onChange={(e) => onAssign(item.id, e.target.value || null)}>
+                <option value="">{tt.inInbox}</option>
+                {dayOptions.map((d) => <option key={d.key} value={d.key}>{d.label}</option>)}
+              </select>
+            )}
+          </div>
+        )}
+      </article>
     );
   }
   if (isAg) {
@@ -1207,8 +1508,117 @@ function ShoppingRow({ item, onToggle, onDelete }) {
   );
 }
 
+/* ============ 旅程顯示輔助 ============ */
+function localToday() {
+  const d = new Date();
+  const p = (n) => String(n).padStart(2, "0");
+  return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate());
+}
+function dayDiff(a, b) {
+  const [ay, am, ad] = a.split("-").map(Number);
+  const [by, bm, bd] = b.split("-").map(Number);
+  return Math.round((Date.UTC(by, bm - 1, bd) - Date.UTC(ay, am - 1, ad)) / 86400000);
+}
+// 顯示用：去掉 YYMMDD-YYMMDD_ 前綴和結尾（年份），資料庫裡的名稱不動
+function cleanTripName(n) {
+  const c = (n || "").replace(/^\d{6}-\d{6}_/, "").replace(/\s*[（(]\d{4}[）)]\s*$/, "").trim();
+  return c || n || "";
+}
+function tripStatus(t, today, lang) {
+  if (t.end_date < today) return { kind: "past", label: lang === "en" ? "Ended" : "已結束" };
+  if (t.start_date <= today) {
+    const n = dayDiff(t.start_date, today) + 1;
+    return { kind: "live", label: lang === "en" ? "On trip · Day " + n : "旅行中 · 第 " + n + " 天" };
+  }
+  const n = dayDiff(today, t.start_date);
+  return { kind: "soon", label: lang === "en" ? "In " + n + " days" : n + " 天後出發" };
+}
+function shortRange(t) {
+  return (t.start_date || "").slice(5).replace("-", "/") + " – " + (t.end_date || "").slice(5).replace("-", "/");
+}
+function pickDefaultTrip(rows, savedId) {
+  const saved = rows.find((t) => t.id === savedId);
+  if (saved) return saved;
+  const today = localToday();
+  const up = rows.filter((t) => t.end_date >= today).sort((a, b) => a.start_date.localeCompare(b.start_date));
+  if (up.length) return up[0];
+  return [...rows].sort((a, b) => b.start_date.localeCompare(a.start_date))[0];
+}
+
+function Dot({ kind, dark, size }) {
+  const c = kind === "past" ? (dark ? "#9ecabd" : "#4a7f6e") : "#c98a1e";
+  return <span className="ag-dot" style={{ background: c, width: size || 10, height: size || 10 }} />;
+}
+
+/* 底部面板（手機）與置中視窗（電腦）共用的外殼 */
+function Sheet({ title, onClose, children }) {
+  return (
+    <div className="sheet-wrap">
+      <div className="sheet-mask" onClick={onClose} />
+      <div className="sheet" role="dialog">
+        <div className="sheet-grab" />
+        {title && <div className="sheet-head">{title}</div>}
+        {children}
+      </div>
+    </div>
+  );
+}
+function Modal({ title, onClose, children }) {
+  return (
+    <div className="modal-wrap">
+      <div className="sheet-mask" onClick={onClose} />
+      <div className="modal" role="dialog">
+        {title && <div className="sheet-head">{title}</div>}
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function QuickAdd({ title, placeholder, okLabel, onSubmit, onClose }) {
+  const [val, setVal] = useState("");
+  return (
+    <Sheet title={title} onClose={onClose}>
+      <form className="qa" onSubmit={(e) => { e.preventDefault(); if (val.trim()) { onSubmit(val.trim()); onClose(); } }}>
+        <input autoFocus value={val} onChange={(e) => setVal(e.target.value)} placeholder={placeholder} />
+        <button type="submit" disabled={!val.trim()}>{okLabel}</button>
+      </form>
+    </Sheet>
+  );
+}
+
+/* 帳號選單（電腦：側欄底部彈出；手機：底部面板） */
+function AccountMenu({ T, lang, setLang, layoutPref, setLayout, onExport, exportStatus, onSignOut, userEmail }) {
+  const layouts = [["auto", T.layoutAuto], ["desktop", T.desktopView], ["mobile", T.mobileView]];
+  return (
+    <div className="acct">
+      <div className="acct__label">{T.collab}</div>
+      <div className="acct__member">
+        <span className="acct__av">{(userEmail || "?").slice(0, 1).toUpperCase()}</span>
+        <span className="acct__who"><span className="acct__name">{userEmail}</span><span className="acct__sub">{T.you}</span></span>
+      </div>
+      <div className="acct__row">
+        <span>{T.language}</span>
+        <span className="acct__seg">
+          <button className={lang === "zh" ? "is-on" : ""} onClick={() => setLang("zh")}>中文</button>
+          <button className={lang === "en" ? "is-on" : ""} onClick={() => setLang("en")}>EN</button>
+        </span>
+      </div>
+      <div className="acct__row">
+        <span>{T.layout}</span>
+        <span className="acct__seg">
+          {layouts.map(([k, label]) => <button key={k} className={layoutPref === k ? "is-on" : ""} onClick={() => setLayout(k)}>{label}</button>)}
+        </span>
+      </div>
+      <div className="acct__hr" />
+      <button className="acct__item" onClick={onExport}><Download size={15} /> <span>{T.exportBackup}</span><small>{exportStatus || T.allTrips}</small></button>
+      <button className="acct__item acct__item--danger" onClick={onSignOut}><LogOut size={15} /> <span>{T.signOut}</span></button>
+    </div>
+  );
+}
+
 /* ============ 主程式 ============ */
-function App({ onSignOut }) {
+function App({ onSignOut, sessionEmail }) {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
   const [tripId, setTripId] = useState(null);
@@ -1227,7 +1637,29 @@ function App({ onSignOut }) {
   const [section, setSection] = useState("itinerary");
   const [lang, setLang] = useState("zh");
   const T = STRINGS[lang];
-  const [viewMode, setViewMode] = useState(window.innerWidth < 640 ? "mobile" : "desktop");
+  const [layoutPref, setLayoutPref] = useState(() => { try { return localStorage.getItem("agemda_layout") || "auto"; } catch (e) { return "auto"; } });
+  const [winW, setWinW] = useState(window.innerWidth);
+  useEffect(() => {
+    const f = () => setWinW(window.innerWidth);
+    window.addEventListener("resize", f);
+    return () => window.removeEventListener("resize", f);
+  }, []);
+  const viewMode = layoutPref === "mobile" || (layoutPref === "auto" && winW <= 768) ? "mobile" : "desktop";
+  const setLayout = (v) => { setLayoutPref(v); try { localStorage.setItem("agemda_layout", v); } catch (e) {} };
+  const [mobScreen, setMobScreen] = useState(() => { try { return localStorage.getItem("agemda_trip_id") ? "trip" : "home"; } catch (e) { return "home"; } });
+  const [showAccount, setShowAccount] = useState(false);
+  const [showSwitcher, setShowSwitcher] = useState(false);
+  const [showInboxSheet, setShowInboxSheet] = useState(false);
+  const [showMore, setShowMore] = useState(false);
+  const [showAddMenu, setShowAddMenu] = useState(false);
+  const [addMode, setAddMode] = useState(null);
+  const [mobFilter, setMobFilter] = useState("all");
+  const [allItemsLite, setAllItemsLite] = useState([]);
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === "Escape") { setShowAccount(false); setShowSwitcher(false); setShowInboxSheet(false); setShowMore(false); setShowAddMenu(false); setAddMode(null); setShowSetup(false); setShowNewTrip(false); } };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
   const [activeDayIdx, setActiveDayIdx] = useState(0);
   const [editingId, setEditingId] = useState(null);
   const [dragItemId, setDragItemId] = useState(null);
@@ -1295,8 +1727,10 @@ function App({ onSignOut }) {
     setHotels(hotelsRes.data.map(hotelFromDb));
     setShopping(shopRes.data);
     // 換旅程時把畫面狀態歸零
-    setActiveDayIdx(0);
-    setMapDayIdx(0);
+    const todayStr = localToday();
+    const startIdx = trip.start_date <= todayStr && todayStr <= trip.end_date ? dayDiff(trip.start_date, todayStr) : 0;
+    setActiveDayIdx(startIdx);
+    setMapDayIdx(startIdx);
     setEditingId(null);
     setShowSetup(false);
     setShowNewTrip(false);
@@ -1314,10 +1748,14 @@ function App({ onSignOut }) {
           tripRows = [created];
         }
         setTrips(tripRows);
+        try {
+          const lite = await db.from("itinerary_items").select("trip_id, day, is_transit");
+          if (!lite.error) setAllItemsLite(lite.data || []);
+        } catch (e) {}
         // 優先回到上次看的旅程；沒有的話就開最早建立的那一趟（原本的旅程）
         let saved = null;
         try { saved = localStorage.getItem("agemda_trip_id"); } catch (e) {}
-        const trip = tripRows.find((t) => t.id === saved) || tripRows[0];
+        const trip = pickDefaultTrip(tripRows, saved);
         await loadTripData(trip);
         setLoading(false);
       } catch (e) {
@@ -1663,95 +2101,155 @@ function App({ onSignOut }) {
     }
   };
 
-  return (
-    <div className="wrap">
-      <div className="ag-app">
-        <div className={`ag-shell ${isMobile ? "ag-shell--mobile" : ""}`}>
-          <div className={`ag-header ${isMobile ? "ag-header--mobile" : ""}`}>
-            <div className="ag-header__left">
-              <div className="ag-header__title">
-                <AgLogo />
+  // ---------- 旅程清單與統計 ----------
+  const today = localToday();
+  const upcomingTrips = trips.filter((t) => t.end_date >= today).sort((a, b) => a.start_date.localeCompare(b.start_date));
+  const pastTrips = trips.filter((t) => t.end_date < today).sort((a, b) => b.start_date.localeCompare(a.start_date));
+  const nextTrip = upcomingTrips[0] || null;
+  const statText = (t) => {
+    const rows = t.id === tripId ? items.map((i) => ({ day: i.day, is_transit: i.isTransit })) : allItemsLite.filter((r) => r.trip_id === t.id);
+    const places = rows.filter((r) => r.day && !r.is_transit).length;
+    const days = dayDiff(t.start_date, t.end_date) + 1;
+    return lang === "en" ? days + " days · " + places + " places" : days + " 天 · " + places + " 個地點";
+  };
+  const curTrip = trips.find((t) => t.id === tripId) || { id: tripId, name: tripName, start_date: tripStart, end_date: tripEnd };
+  const curName = cleanTripName(tripName);
+  const curRange = tripStart.slice(5).replace("-", "/") + " – " + tripEnd.slice(5).replace("-", "/");
+  const dayOptions = days.map((d) => ({ key: d.key, label: d.md + " " + weekdayLabel(d.weekdayIndex, lang) }));
+  const Wrap = isMobile ? Sheet : Modal;
+  const userEmail = (typeof sessionEmail === "string" && sessionEmail) || "";
+
+  const openTripMobile = async (t) => {
+    if (t.id !== tripId) await handleSwitchTrip(t.id);
+    setMobScreen("trip");
+    setSection("itinerary");
+    setMapOpen(false);
+  };
+  const pickDay = (i) => { setActiveDayIdx(i); setMapDayIdx(i); };
+  const goTab = (k) => {
+    if (k === "map") { setMapOpen(true); }
+    else { setMapOpen(false); setSection(k); }
+  };
+  const activeTab = mapOpen ? "map" : section;
+
+  // ---------- 共用：旅程列 ----------
+  const sideRow = (t) => {
+    const st = tripStatus(t, today, lang);
+    const cur = t.id === tripId;
+    return (
+      <button key={t.id} className={`ag-trip ${cur ? "is-cur" : ""}`} onClick={() => handleSwitchTrip(t.id)}>
+        <Dot kind={st.kind === "past" ? "past" : "soon"} dark={cur} />
+        <span className="ag-trip__txt">
+          <span className="ag-trip__name">{cleanTripName(t.name)}</span>
+          <span className="ag-trip__sub">{shortRange(t)} · {st.label}</span>
+        </span>
+      </button>
+    );
+  };
+  const sheetRow = (t) => {
+    const st = tripStatus(t, today, lang);
+    const cur = t.id === tripId;
+    return (
+      <button key={t.id} className={`sw-row ${cur ? "is-cur" : ""}`} onClick={() => { setShowSwitcher(false); openTripMobile(t); }}>
+        <Dot kind={st.kind === "past" ? "past" : "soon"} dark={cur} />
+        <span className="sw-row__txt">
+          <span className="sw-row__name">{cleanTripName(t.name)}</span>
+          <span className="sw-row__sub">{shortRange(t)} · {st.label}</span>
+        </span>
+        {cur && <span className="sw-row__check"><Check size={16} /></span>}
+      </button>
+    );
+  };
+  const homeRow = (t) => {
+    const st = tripStatus(t, today, lang);
+    const past = st.kind === "past";
+    return (
+      <button key={t.id} className="mob-trip" onClick={() => openTripMobile(t)}>
+        <span className={`mob-trip__thumb ${past ? "is-past" : ""}`}><Dot kind={past ? "past" : "soon"} size={18} /></span>
+        <span className="mob-trip__txt">
+          <span className="mob-trip__name">{cleanTripName(t.name)}</span>
+          <span className="mob-trip__range">{shortRange(t)}</span>
+          <span className="mob-trip__stat">{statText(t)}</span>
+        </span>
+        <span className={`mob-pill ${past ? "is-past" : ""}`}>{st.label}</span>
+      </button>
+    );
+  };
+  const openNewTrip = () => { setNewTrip({ name: "", start: "", end: "" }); setShowNewTrip(true); setShowSetup(false); setShowSwitcher(false); setShowAccount(false); };
+
+  const accountMenu = (
+    <AccountMenu
+      T={T} lang={lang} setLang={setLang} layoutPref={layoutPref} setLayout={setLayout}
+      onExport={handleExportBackup} exportStatus={exportStatus} onSignOut={onSignOut} userEmail={userEmail}
+    />
+  );
+
+  // ---------- 彈出的表單（新增旅程／編輯旅程） ----------
+  const formOverlays = (
+    <React.Fragment>
+      {showNewTrip && (
+        <Wrap title={T.newTrip} onClose={() => setShowNewTrip(false)}>
+          <div className="form-grid">
+            <div className="setup-field"><label>{T.tripName}</label><input type="text" value={newTrip.name} placeholder={T.newTripDefault} onChange={(e) => setNewTrip({ ...newTrip, name: e.target.value })} /></div>
+            <div className="setup-field"><label>{T.departureDate}</label><input type="date" value={newTrip.start} onChange={(e) => setNewTrip({ ...newTrip, start: e.target.value, end: newTrip.end && newTrip.end < e.target.value ? e.target.value : newTrip.end })} /></div>
+            <div className="setup-field"><label>{T.returnDate}</label><input type="date" min={newTrip.start} value={newTrip.end} onChange={(e) => setNewTrip({ ...newTrip, end: e.target.value })} /></div>
+          </div>
+          <div className="form-btns">
+            <button className="setup-cancel" onClick={() => setShowNewTrip(false)}>{T.cancel}</button>
+            <button className="setup-close" disabled={!newTrip.start || !newTrip.end} onClick={async () => { await handleCreateTrip(); if (isMobile) setMobScreen("trip"); }}>{T.createTrip}</button>
+          </div>
+        </Wrap>
+      )}
+      {showSetup && (
+        <Wrap title={T.editTrip} onClose={() => { handleTripNameSave(); setShowSetup(false); }}>
+          <div className="form-grid">
+            <div className="setup-field"><label>{T.tripName}</label><input type="text" value={tripName} onChange={(e) => handleTripNameChange(e.target.value)} onBlur={handleTripNameSave} /></div>
+            <div className="setup-field"><label>{T.departureDate}</label><input type="date" value={tripStart} onChange={(e) => handleTripStartChange(e.target.value)} /></div>
+            <div className="setup-field"><label>{T.returnDate}</label><input type="date" value={tripEnd} onChange={(e) => handleTripEndChange(e.target.value)} /></div>
+          </div>
+          <div className="form-btns">
+            <button className="setup-close" onClick={() => { handleTripNameSave(); setShowSetup(false); }}>{T.done}</button>
+          </div>
+        </Wrap>
+      )}
+    </React.Fragment>
+  );
+
+  // ---------- 共用內容區塊 ----------
+  const logiShopBlock = (
+    <React.Fragment>
+      {section === "logistics" && (
+        <div className={isMobile ? "mobile-wrap" : ""} style={isMobile ? {} : { padding: "24px 36px 28px" }}>
+          <div className="logi-section">
+            <div>
+              <div className="logi-group-label">{T.flightGroup}</div>
+              <div className="logi-list">
+                {flights.map((f) => <FlightCard key={f.id} flight={f} T={T} isEditing={editingId === f.id} onEditStart={setEditingId} onEditSave={handleFlightSave} onDelete={handleFlightDelete} />)}
+                <button className="logi-add" onClick={handleAddFlight}><Plus size={13} /> {T.addFlight}</button>
               </div>
             </div>
-            <div className="ag-header__tools">
-              <button className="ag-backfill-btn" title={backfillStatus || T.backfill} onClick={handleBackfillLocations}>
-                <Sparkles size={13} className={backfillStatus ? "ag-spin" : ""} />{!isMobile && <> {T.backfill}</>}
-              </button>
-              {!isMobile && backfillStatus && <span className="ag-backfill-status">{backfillStatus}</span>}
-              {isMobile ? (
-                <button className="ag-icon-toggle" title={lang === "zh" ? "EN" : "中文"} onClick={() => setLang(lang === "zh" ? "en" : "zh")}>
-                  <Globe size={14} />
-                </button>
-              ) : (
-                <div className="ag-toggle">
-                  <button className={lang === "zh" ? "is-on" : ""} onClick={() => setLang("zh")}>中文</button>
-                  <button className={lang === "en" ? "is-on" : ""} onClick={() => setLang("en")}>EN</button>
-                </div>
-              )}
-              {isMobile ? (
-                <button className="ag-icon-toggle" title={T.desktopView} onClick={() => setViewMode("desktop")}>
-                  <Monitor size={14} />
-                </button>
-              ) : (
-                <div className="ag-toggle">
-                  <button className={!isMobile ? "is-on" : ""} onClick={() => setViewMode("desktop")}><Monitor size={13} /> {T.desktopView}</button>
-                  <button className={isMobile ? "is-on" : ""} onClick={() => setViewMode("mobile")}><Smartphone size={13} /> {T.mobileView}</button>
-                </div>
-              )}
-              <button className="ag-backfill-btn" title={exportStatus || T.exportBackup} onClick={handleExportBackup}>
-                <Download size={13} />{!isMobile && <> {T.exportBackup}</>}
-              </button>
-              {!isMobile && exportStatus && <span className="ag-backfill-status">{exportStatus}</span>}
-              {onSignOut && (
-                <button className="ag-backfill-btn" title={T.signOut} onClick={onSignOut}>
-                  <LogOut size={13} />{!isMobile && <> {T.signOut}</>}
-                </button>
-              )}
+            <div>
+              <div className="logi-group-label">{T.hotelGroup}</div>
+              <div className="logi-list">
+                {hotels.map((h) => <HotelCard key={h.id} hotel={h} T={T} isEditing={editingId === h.id} onEditStart={setEditingId} onEditSave={handleHotelSave} onDelete={handleHotelDelete} onMapClick={handleMapClick} />)}
+                <button className="logi-add" onClick={handleAddHotel}><Plus size={13} /> {T.addHotel}</button>
+              </div>
             </div>
           </div>
-
-          <div className={`ag-tripbar ${isMobile ? "ag-tripbar--mobile" : ""}`}>
-            <select className="ag-tripselect" value={tripId || ""} onChange={(e) => handleSwitchTrip(e.target.value)}>
-              {[...trips].sort((a, b) => (b.start_date || "").localeCompare(a.start_date || "")).map((t) => (
-                <option key={t.id} value={t.id}>{t.name || T.newTripDefault}（{(t.start_date || "").slice(0, 4)}）</option>
-              ))}
-            </select>
-            <button className="ag-backfill-btn" onClick={() => { setNewTrip({ name: "", start: "", end: "" }); setShowNewTrip((v) => !v); setShowSetup(false); }}>
-              <Plus size={13} /> {T.newTrip}
-            </button>
-          </div>
-
-          {showNewTrip && (
-            <div className={`setup-panel ${isMobile ? "setup-panel--mobile" : ""}`}>
-              <div className="setup-field"><label>{T.tripName}</label><input type="text" value={newTrip.name} placeholder={T.newTripDefault} onChange={(e) => setNewTrip({ ...newTrip, name: e.target.value })} /></div>
-              <div className="setup-field"><label>{T.departureDate}</label><input type="date" value={newTrip.start} onChange={(e) => setNewTrip({ ...newTrip, start: e.target.value, end: newTrip.end && newTrip.end < e.target.value ? e.target.value : newTrip.end })} /></div>
-              <div className="setup-field"><label>{T.returnDate}</label><input type="date" min={newTrip.start} value={newTrip.end} onChange={(e) => setNewTrip({ ...newTrip, end: e.target.value })} /></div>
-              <button className="setup-close" disabled={!newTrip.start || !newTrip.end} onClick={handleCreateTrip}>{T.createTrip}</button>
-              <button className="setup-cancel" onClick={() => setShowNewTrip(false)}>{T.cancel}</button>
-            </div>
-          )}
-
-          <div className={`ag-triprow ${isMobile ? "ag-triprow--mobile" : ""}`}>
-            <span className="ag-triprow__label">{T.tripDateLabel}</span>
-            <span className="ag-triprow__range">{tripStart.slice(5).replace("-", "/")} – {tripEnd.slice(5).replace("-", "/")}</span>
-            <button className="ag-triprow__edit" title={T.editDays} onClick={() => setShowSetup((s) => !s)}><Pencil size={12} /></button>
-          </div>
-
-      {showSetup && (
-        <div className={`setup-panel ${isMobile ? "setup-panel--mobile" : ""}`}>
-          <div className="setup-field"><label>{T.tripName}</label><input type="text" value={tripName} onChange={(e) => handleTripNameChange(e.target.value)} onBlur={handleTripNameSave} /></div>
-          <div className="setup-field"><label>{T.departureDate}</label><input type="date" value={tripStart} onChange={(e) => handleTripStartChange(e.target.value)} /></div>
-          <div className="setup-field"><label>{T.returnDate}</label><input type="date" value={tripEnd} onChange={(e) => handleTripEndChange(e.target.value)} /></div>
-          <button className="setup-close" onClick={() => { handleTripNameSave(); setShowSetup(false); }}>{T.done}</button>
         </div>
       )}
 
-          <div className={`ag-tabs ${isMobile ? "ag-tabs--mobile" : ""}`}>
-            <button className={`ag-tab ${section === "itinerary" ? "is-active" : ""}`} onClick={() => setSection("itinerary")}><ListChecks size={13} /> {T.tabItinerary}</button>
-            <button className={`ag-tab ${section === "logistics" ? "is-active" : ""}`} onClick={() => setSection("logistics")}><Plane size={13} /> {T.tabLogistics}</button>
-            <button className={`ag-tab ${section === "shopping" ? "is-active" : ""}`} onClick={() => setSection("shopping")}><ShoppingBag size={13} /> {T.tabShopping}</button>
-          </div>
-
+      {section === "shopping" && (
+        <div className={isMobile ? "mobile-wrap" : "shop-section"} style={isMobile ? {} : { padding: "24px 36px 28px" }}>
+          <div className="shop-progress">{lang === "en" ? `${shoppingDone} / ${shopping.length} done` : `已完成 ${shoppingDone} / ${shopping.length}`}</div>
+          <div className="shop-list">{shopping.map((s) => <ShoppingRow key={s.id} item={s} T={T} onToggle={handleToggleShopping} onDelete={handleDeleteShopping} />)}</div>
+          <AddInline onAdd={handleAddShopping} placeholder={T.shoppingAdd} inputPlaceholder={T.inputContent} />
+        </div>
+      )}
+    </React.Fragment>
+  );
+  const desktopItinBlock = (
+    <React.Fragment>
       {section === "itinerary" && !isMobile && (
         <React.Fragment>
           <div
@@ -1828,9 +2326,6 @@ function App({ onSignOut }) {
           </div>
 
           <div className={`ag-maprail ${mapOpen ? "ag-maprail--open" : ""}`}>
-            {!mapOpen && (
-              <button className="ag-maprail__tab" onClick={() => setMapOpen(true)}>{T.expandMap}</button>
-            )}
             {mapOpen && (
               <div className="ag-map">
                 <div className="ag-map__head">
@@ -1849,139 +2344,259 @@ function App({ onSignOut }) {
           </div>
         </React.Fragment>
       )}
+    </React.Fragment>
+  );
 
-      {section === "itinerary" && isMobile && (
-        <div
-          className="inbox-shelf"
-          onDragOver={(e) => e.preventDefault()}
-          onDrop={(e) => handleDropOnDay(e, null)}
-        >
-          <div className="inbox-label"><ListChecks size={13} /> {T.inboxLabel}</div>
-          {inboxItems.length === 0 ? (
-            <div className="inbox-empty">{T.inboxEmpty}</div>
+  // ================= 電腦版 B =================
+  const desktopUI = (
+    <div className="ag-app ag-app--side">
+      <aside className="ag-side">
+        <div className="ag-side__logo"><AgLogo /></div>
+        <div className="ag-side__list">
+          {upcomingTrips.length > 0 && (
+            <div className="ag-side__group">
+              <div className="ag-side__label">{T.upcoming}</div>
+              {upcomingTrips.map(sideRow)}
+            </div>
+          )}
+          {pastTrips.length > 0 && (
+            <div className="ag-side__group">
+              <div className="ag-side__label">{T.pastTrips}</div>
+              {pastTrips.map(sideRow)}
+            </div>
+          )}
+          <button className="ag-side__new" onClick={openNewTrip}><Plus size={14} /> {T.newTrip}</button>
+        </div>
+        <div className="ag-side__acct">
+          {showAccount && (
+            <React.Fragment>
+              <div className="ag-backdrop" onClick={() => setShowAccount(false)} />
+              <div className="ag-popup">{accountMenu}</div>
+            </React.Fragment>
+          )}
+          <button className="ag-acctbtn" onClick={() => setShowAccount((v) => !v)}>
+            <span className="ag-av">{(userEmail || "?").slice(0, 1).toUpperCase()}</span>
+            <span className="ag-acctbtn__txt"><span className="ag-acctbtn__name">{(userEmail || "").split("@")[0]}</span><span className="ag-acctbtn__sub">{lang === "en" ? "Shared · synced" : "雙人共編 · 已同步"}</span></span>
+            <span className="ag-acctbtn__caret">⌃</span>
+          </button>
+        </div>
+      </aside>
+
+      <main className="ag-pane">
+        <header className="ag-pane__head">
+          <div className="ag-crumb">{T.myTrips} › {curName}</div>
+          <div className="ag-titlerow">
+            <h1 className="ag-title">{curName}</h1>
+            <span className="ag-title__range">{curRange}</span>
+            <span className="ag-title__stats">{statText(curTrip)}</span>
+            <button className="ag-triprow__edit" title={T.editDays} onClick={() => { setShowSetup(true); setShowNewTrip(false); }}><Pencil size={12} /></button>
+            <span className="ag-titlerow__btns">
+              {backfillStatus && <span className="ag-backfill-status">{backfillStatus}</span>}
+              <button className="ag-backfill-btn" onClick={handleBackfillLocations}><Sparkles size={13} className={backfillStatus ? "ag-spin" : ""} /> {T.backfill}</button>
+              {section === "itinerary" && (
+                <button className="ag-mapbtn" onClick={() => setMapOpen((v) => !v)}><MapPin size={13} /> {mapOpen ? T.collapseMap : T.expandMap}</button>
+              )}
+            </span>
+          </div>
+          <div className="ag-utabs">
+            <button className={`ag-utab ${section === "itinerary" ? "is-active" : ""}`} onClick={() => setSection("itinerary")}><ListChecks size={14} /> {T.tabItinerary}</button>
+            <button className={`ag-utab ${section === "logistics" ? "is-active" : ""}`} onClick={() => setSection("logistics")}><Plane size={14} /> {T.tabLogistics}</button>
+            <button className={`ag-utab ${section === "shopping" ? "is-active" : ""}`} onClick={() => setSection("shopping")}><ShoppingBag size={14} /> {T.tabShopping}</button>
+          </div>
+        </header>
+        <div className="ag-pane__body">
+          {desktopItinBlock}
+          {logiShopBlock}
+        </div>
+      </main>
+    </div>
+  );
+
+  // ================= 手機版 C =================
+  const mobHome = (
+    <div className="mob-page">
+      <div className="mob-topbar">
+        <AgLogo size="sm" />
+        <button className="mob-avatar" onClick={() => setShowAccount(true)} aria-label={T.layout}>{(userEmail || "?").slice(0, 1).toUpperCase()}</button>
+      </div>
+      <h1 className="mob-h1">{T.myTrips}</h1>
+      {nextTrip && (() => {
+        const st = tripStatus(nextTrip, today, lang);
+        return (
+          <div className="mob-next">
+            <div className="mob-next__eyebrow">{T.nextTripLabel} · {st.label}</div>
+            <div className="mob-next__name">{cleanTripName(nextTrip.name)}</div>
+            <div className="mob-next__range">{shortRange(nextTrip)}</div>
+            <div className="mob-next__stat">{statText(nextTrip)}</div>
+            <button className="mob-cta" onClick={() => openTripMobile(nextTrip)}>{T.continuePlan}</button>
+          </div>
+        );
+      })()}
+      <div className="mob-filter">
+        {[["all", T.filterAll], ["soon", T.upcoming], ["past", T.pastTrips]].map(([k, label]) => (
+          <button key={k} className={mobFilter === k ? "is-on" : ""} onClick={() => setMobFilter(k)}>{label}</button>
+        ))}
+      </div>
+      <div className="mob-triplist">
+        {(mobFilter === "soon" ? upcomingTrips : mobFilter === "past" ? pastTrips : [...upcomingTrips, ...pastTrips]).map(homeRow)}
+        <button className="mob-newtrip" onClick={openNewTrip}><Plus size={15} /> {T.newTrip}</button>
+      </div>
+    </div>
+  );
+
+  const mobTrip = (
+    <div className="mob-shell">
+      <div className="mob-tophead">
+        <button className="mob-round" onClick={() => { setMobScreen("home"); setMapOpen(false); }} aria-label={T.back}>‹</button>
+        <button className="mob-titlebtn" onClick={() => setShowSwitcher(true)}>
+          <span className="mob-titlebtn__name">{curName} <span className="mob-caret">▾</span></span>
+          <span className="mob-titlebtn__range">{curRange}</span>
+        </button>
+        <button className="mob-round" onClick={() => setShowMore(true)} aria-label={T.more}>⋯</button>
+      </div>
+
+      {(activeTab === "itinerary" || activeTab === "map") && (
+        <div className="mob-days">
+          {days.map((d, i) => (
+            <button key={d.key} className={`mob-daypill ${i === (activeTab === "map" ? mapDayIdx : activeDayIdx) ? "is-on" : ""}`} onClick={() => pickDay(i)}>
+              <span className="mob-daypill__d">{d.md}</span>
+              <span className="mob-daypill__w">{weekdayLabel(d.weekdayIndex, lang)}</span>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {activeTab === "itinerary" && (
+        <div className="mob-scroll">
+          <button className="mob-inbox" onClick={() => setShowInboxSheet(true)}>
+            <ListChecks size={16} /> <span className="mob-inbox__t">{T.inboxEntry}</span>
+            <span className="mob-inbox__n">{lang === "en" ? inboxItems.length + " places" : inboxItems.length + " 個地點"}</span>
+            <span className="mob-inbox__go">›</span>
+          </button>
+          {activeDay && (
+            <div className="mob-dayhead">
+              <span className="mob-dayhead__date">{activeDay.md}</span>
+              <span className="mob-dayhead__meta">{weekdayLabel(activeDay.weekdayIndex, lang)} · {lang === "en" ? getDayCards(activeDay.key).manual.length + " items" : getDayCards(activeDay.key).manual.length + " 項"}</span>
+            </div>
+          )}
+          {activeDay && getDayCards(activeDay.key).auto.map((it) => (
+            <AutoItemCard key={it.id} item={it} T={T} onMapClick={handleMapClick} />
+          ))}
+          <div className="mobile-list mob-list" ref={dayListRef} data-day={activeDay ? activeDay.key : ""}>
+            {activeDay && getDayCards(activeDay.key).manual.length === 0 && <div className="empty-note sortable-ignore">{T.dayEmpty}</div>}
+            {activeDay && getDayCards(activeDay.key).manual.map((it) => (
+              <div key={it.id} data-item-id={it.id}>
+                <ItemCard item={it} lang={lang} T={T} variant="mob" draggable onDragStart={handleDragStart} onDragEnd={handleDragEnd} onMapClick={handleMapClick} onDelete={handleDelete} onToggleBooked={handleToggleBooked} onToggleImportant={handleToggleImportant} isEditing={editingId === it.id} onEditStart={setEditingId} onEditSave={handleEditSave} dayOptions={dayOptions} onAssign={assignDay} />
+              </div>
+            ))}
+          </div>
+          {activeDay && getDayCards(activeDay.key).nightly.map((h) => (
+            <div key={`night-${h.id}-${activeDay.key}`} className="mob-night"><NightlyHotelStrip hotel={h} T={T} onMapClick={handleMapClick} /></div>
+          ))}
+        </div>
+      )}
+
+      {activeTab === "map" && (
+        <div className="mob-mapwrap">
+          <div className="mob-mapcanvas"><div ref={mapDivRef} className="map-canvas-el" style={{ width: "100%", height: "100%" }}></div></div>
+          {mapPoints.length === 0 ? (
+            <div className="mobile-map-empty mob-mapnote">{T.mapHint}</div>
           ) : (
-            <div className="inbox-row" ref={inboxListRef} data-day="">
-              {inboxItems.map((it) => (
-                <div key={it.id} className="inbox-card-wrap" data-item-id={it.id} onDragOver={(e) => e.preventDefault()} onDrop={(e) => handleDropBeforeCard(e, null, it.id)}>
-                  <ItemCard
-                    item={displayItem(it)}
-                    lang={lang}
-                    T={T}
-                    draggable={editingId !== it.id}
-                    onDragStart={handleDragStart}
-                    onDragEnd={handleDragEnd}
-                    onMapClick={handleMapClick}
-                    onDelete={handleDelete}
-                    onToggleBooked={handleToggleBooked}
-                    onToggleImportant={handleToggleImportant}
-                    isEditing={editingId === it.id}
-                    onEditStart={setEditingId}
-                    onEditSave={handleEditSave}
-                  />
+            <div className="mobile-map-mini-list mob-mapnote">
+              {mapPoints.map((pt) => (
+                <div key={pt.id} className="mobile-map-mini-card" onClick={() => panMapTo(pt)}>
+                  <div className="mobile-map-mini-num">{pt.mapIndex}</div>
+                  <div className="mobile-map-mini-name">{pt.name}</div>
+                  {pt.time && <div className="mobile-map-mini-time">{pt.time}</div>}
                 </div>
               ))}
             </div>
           )}
-          <div style={{ marginTop: 8 }}>
+        </div>
+      )}
+
+      {(activeTab === "logistics" || activeTab === "shopping") && (
+        <div className="mob-scroll">{logiShopBlock}</div>
+      )}
+
+      {activeTab === "itinerary" && (
+        <button className="mob-fab" onClick={() => setShowAddMenu(true)} aria-label={T.addItem}><Plus size={24} /></button>
+      )}
+
+      <nav className="mob-tabbar">
+        {[["itinerary", T.tabItinerary, ListChecks], ["logistics", T.tabLogistics, Plane], ["shopping", T.tabShop, ShoppingBag], ["map", T.tabMapShort, MapPin]].map(([k, label, Ic]) => (
+          <button key={k} className={activeTab === k ? "is-on" : ""} onClick={() => goTab(k)}>
+            <Ic size={20} /><span>{label}</span>
+          </button>
+        ))}
+      </nav>
+    </div>
+  );
+
+  const mobileUI = mobScreen === "home" ? mobHome : mobTrip;
+
+  const mobileSheets = (
+    <React.Fragment>
+      {showAccount && <Sheet onClose={() => setShowAccount(false)}>{accountMenu}</Sheet>}
+      {showSwitcher && (
+        <Sheet title={T.switchTrip} onClose={() => setShowSwitcher(false)}>
+          {upcomingTrips.length > 0 && <div className="sw-group"><div className="ag-side__label">{T.upcoming}</div>{upcomingTrips.map(sheetRow)}</div>}
+          {pastTrips.length > 0 && <div className="sw-group"><div className="ag-side__label">{T.pastTrips}</div>{pastTrips.map(sheetRow)}</div>}
+          <button className="mob-cta" onClick={openNewTrip}><Plus size={15} /> {T.newTrip}</button>
+          <button className="sw-link" onClick={() => { setShowSwitcher(false); setMobScreen("home"); setMapOpen(false); }}>{T.backHome}</button>
+        </Sheet>
+      )}
+      {showMore && (
+        <Sheet onClose={() => setShowMore(false)}>
+          <button className="acct__item" onClick={() => { setShowMore(false); setShowSetup(true); }}><Pencil size={15} /> <span>{T.editTrip}</span></button>
+          <button className="acct__item" onClick={handleBackfillLocations}><Sparkles size={15} className={backfillStatus ? "ag-spin" : ""} /> <span>{T.backfill}</span></button>
+          {backfillStatus && <div className="acct__note">{backfillStatus}</div>}
+        </Sheet>
+      )}
+      {showInboxSheet && (
+        <Sheet title={T.inboxLabel} onClose={() => setShowInboxSheet(false)}>
+          <div className="mob-inboxlist" ref={inboxListRef} data-day="">
+            {inboxItems.length === 0 && <div className="inbox-empty sortable-ignore">{T.inboxEmpty}</div>}
+            {inboxItems.map((it) => (
+              <div key={it.id} data-item-id={it.id}>
+                <ItemCard item={displayItem(it)} lang={lang} T={T} variant="mob" draggable={editingId !== it.id} onDragStart={handleDragStart} onDragEnd={handleDragEnd} onMapClick={handleMapClick} onDelete={handleDelete} onToggleBooked={handleToggleBooked} onToggleImportant={handleToggleImportant} isEditing={editingId === it.id} onEditStart={setEditingId} onEditSave={handleEditSave} dayOptions={dayOptions} onAssign={assignDay} />
+              </div>
+            ))}
+          </div>
+          <div className="sortable-ignore" style={{ marginTop: 10 }}>
             <AddInline onAdd={handleAddInbox} placeholder={T.addToInbox} inputPlaceholder={T.inputContent} />
           </div>
-        </div>
+        </Sheet>
       )}
-
-      {section === "itinerary" && isMobile && (
-        <React.Fragment>
-            <div className="mobile-wrap">
-              <div className="day-tabs">
-                {days.map((d, i) => (
-                  <div key={d.key} className={`day-tab ${i === activeDayIdx ? "active" : ""}`} onClick={() => setActiveDayIdx(i)}>
-                    <div className="md">{d.md}</div><div className="wd">{weekdayLabel(d.weekdayIndex, lang)}</div>
-                  </div>
-                ))}
-              </div>
-              {activeDay && getDayCards(activeDay.key).auto.map((it) => (
-                <AutoItemCard key={it.id} item={it} T={T} onMapClick={handleMapClick} />
-              ))}
-              <div className="mobile-list" ref={dayListRef} data-day={activeDay ? activeDay.key : ""}>
-                {activeDay && getDayCards(activeDay.key).manual.length === 0 && <div className="empty-note sortable-ignore">{T.dayEmpty}</div>}
-                {activeDay && getDayCards(activeDay.key).manual.map((it) => (
-                  <div key={it.id} data-item-id={it.id}>
-                    <ItemCard item={it} lang={lang} T={T} draggable onDragStart={handleDragStart} onDragEnd={handleDragEnd} onMapClick={handleMapClick} onDelete={handleDelete} onToggleBooked={handleToggleBooked} onToggleImportant={handleToggleImportant} isEditing={editingId === it.id} onEditStart={setEditingId} onEditSave={handleEditSave} />
-                  </div>
-                ))}
-                {activeDay && <div className="sortable-ignore"><AddInline onAdd={(name) => handleAdd(activeDay.key, name)} placeholder={T.addItem} inputPlaceholder={T.inputContent} /></div>}
-                {activeDay && <div className="sortable-ignore"><AddInline onAdd={(name) => handleAddTransit(activeDay.key, name)} placeholder={T.addTransit} inputPlaceholder={T.inputContent} /></div>}
-                {activeDay && getDayCards(activeDay.key).nightly.map((h) => <div key={`night-${h.id}-${activeDay.key}`} className="sortable-ignore"><NightlyHotelStrip hotel={h} T={T} onMapClick={handleMapClick} /></div>)}
-              </div>
-            </div>
-
-            <button className="mobile-map-fab" onClick={() => setMapOpen(true)} aria-label={T.expandMap}>
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--ag-ink-on-dark)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 20l-5.447-2.724A1 1 0 0 1 3 16.382V5.618a1 1 0 0 1 1.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0 0 21 18.382V7.618a1 1 0 0 0-.553-.894L15 4m0 13V4m0 0L9 7" /></svg>
-            </button>
-
-            {mapOpen && (
-              <div className="mobile-map-overlay">
-                <button className="mobile-map-close" onClick={() => setMapOpen(false)} aria-label={T.collapseMap}><XIcon size={18} /></button>
-                <div className="mobile-map-canvas-wrap">
-                  <div ref={mapDivRef} className="map-canvas-el"></div>
-                </div>
-                <div className="mobile-map-bottom">
-                  <div className="mobile-map-days">
-                    {days.map((d, i) => (
-                      <div key={d.key} className={`day-tab ${i === mapDayIdx ? "active" : ""}`} onClick={() => setMapDayIdx(i)}>
-                        <div className="md">{d.md}</div><div className="wd">{weekdayLabel(d.weekdayIndex, lang)}</div>
-                      </div>
-                    ))}
-                  </div>
-                  {mapPoints.length === 0 ? (
-                    <div className="mobile-map-empty">{T.mapHint}</div>
-                  ) : (
-                    <div className="mobile-map-mini-list">
-                      {mapPoints.map((pt) => (
-                        <div key={pt.id} className="mobile-map-mini-card" onClick={() => panMapTo(pt)}>
-                          <div className="mobile-map-mini-num">{pt.mapIndex}</div>
-                          <div className="mobile-map-mini-name">{pt.name}</div>
-                          {pt.time && <div className="mobile-map-mini-time">{pt.time}</div>}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-          </React.Fragment>
+      {showAddMenu && (
+        <Sheet onClose={() => setShowAddMenu(false)}>
+          <button className="acct__item" onClick={() => { setShowAddMenu(false); setAddMode("item"); }}><Plus size={15} /> <span>{T.addItem}</span></button>
+          <button className="acct__item" onClick={() => { setShowAddMenu(false); setAddMode("transit"); }}><Plus size={15} /> <span>{T.addTransit}</span></button>
+          <button className="acct__item" onClick={() => { setShowAddMenu(false); setAddMode("inbox"); }}><Plus size={15} /> <span>{T.addToInbox}</span></button>
+        </Sheet>
       )}
-
-      {section === "logistics" && (
-        <div className={isMobile ? "mobile-wrap" : ""} style={isMobile ? {} : { padding: "24px 36px 28px" }}>
-          <div className="logi-section">
-            <div>
-              <div className="logi-group-label">{T.flightGroup}</div>
-              <div className="logi-list">
-                {flights.map((f) => <FlightCard key={f.id} flight={f} T={T} isEditing={editingId === f.id} onEditStart={setEditingId} onEditSave={handleFlightSave} onDelete={handleFlightDelete} />)}
-                <button className="logi-add" onClick={handleAddFlight}><Plus size={13} /> {T.addFlight}</button>
-              </div>
-            </div>
-            <div>
-              <div className="logi-group-label">{T.hotelGroup}</div>
-              <div className="logi-list">
-                {hotels.map((h) => <HotelCard key={h.id} hotel={h} T={T} isEditing={editingId === h.id} onEditStart={setEditingId} onEditSave={handleHotelSave} onDelete={handleHotelDelete} onMapClick={handleMapClick} />)}
-                <button className="logi-add" onClick={handleAddHotel}><Plus size={13} /> {T.addHotel}</button>
-              </div>
-            </div>
-          </div>
-        </div>
+      {addMode && (
+        <QuickAdd
+          title={addMode === "item" ? T.addItem : addMode === "transit" ? T.addTransit : T.addToInbox}
+          placeholder={T.inputContent}
+          okLabel={T.ok}
+          onClose={() => setAddMode(null)}
+          onSubmit={(name) => {
+            if (addMode === "inbox") handleAddInbox(name);
+            else if (addMode === "transit") handleAddTransit(activeDay.key, name);
+            else handleAdd(activeDay.key, name);
+          }}
+        />
       )}
+    </React.Fragment>
+  );
 
-      {section === "shopping" && (
-        <div className={isMobile ? "mobile-wrap" : "shop-section"} style={isMobile ? {} : { padding: "24px 36px 28px" }}>
-          <div className="shop-progress">{lang === "en" ? `${shoppingDone} / ${shopping.length} done` : `已完成 ${shoppingDone} / ${shopping.length}`}</div>
-          <div className="shop-list">{shopping.map((s) => <ShoppingRow key={s.id} item={s} T={T} onToggle={handleToggleShopping} onDelete={handleDeleteShopping} />)}</div>
-          <AddInline onAdd={handleAddShopping} placeholder={T.shoppingAdd} inputPlaceholder={T.inputContent} />
-        </div>
-      )}
-        </div>
-      </div>
-    </div>
+  return (
+    <React.Fragment>
+      {isMobile ? mobileUI : desktopUI}
+      {formOverlays}
+      {isMobile && mobileSheets}
+    </React.Fragment>
   );
 }
 
@@ -2026,7 +2641,7 @@ function Root() {
   if (session === undefined) return <div className="loading-screen">載入中…</div>;
   if (!session) return <LoginScreen />;
   // key 綁 user id：登出再換別人登入時，整個 App 重新載入
-  return <App key={session.user.id} onSignOut={() => db.auth.signOut()} />;
+  return <App key={session.user.id} sessionEmail={session.user.email} onSignOut={() => db.auth.signOut()} />;
 }
 
 ReactDOM.createRoot(document.getElementById("root")).render(<Root />);

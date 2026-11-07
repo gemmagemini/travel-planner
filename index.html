@@ -1069,6 +1069,16 @@ body { font-family: var(--ag-font-ui); }
 
 /* 手機版內，航班飯店／購物清單區塊不要沿用電腦版的 36px 邊距 */
 .mob-scroll .mobile-wrap { max-width: none; padding: 0; }
+
+/* 貼上文字自動辨識 */
+.spaste { margin-top: 8px; }
+.spaste__toggle { display: inline-flex; align-items: center; gap: 6px; background: transparent; border: 1px dashed var(--ag-line-add); border-radius: var(--ag-r-pill); padding: 6px 12px; font: inherit; font-size: 12.5px; color: var(--ag-ink-2); cursor: pointer; }
+.spaste__toggle:hover { border-color: var(--ag-accent); color: var(--ag-accent); }
+.spaste__box { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+.spaste__box textarea { width: 100%; box-sizing: border-box; border: 1px solid var(--ag-line); border-radius: 12px; padding: 10px; font: inherit; font-size: 16px; resize: vertical; background: var(--ag-surface); color: var(--ag-ink); }
+.spaste__go { align-self: flex-end; border: 0; border-radius: var(--ag-r-pill); padding: 8px 16px; background: var(--ag-dark); color: var(--ag-ink-on-dark); font: inherit; font-size: 13.5px; cursor: pointer; }
+.spaste__go:disabled { opacity: .45; cursor: default; }
+.spaste__msg { margin-top: 6px; font-size: 12.5px; color: var(--ag-ink-3); }
 </style>
 </head>
 <body>
@@ -1101,7 +1111,7 @@ const STRINGS = {
     departureDate: "出發日期", returnDate: "回程日期", done: "完成",
     inboxLabel: "待排清單（還沒排定日期）",
     inboxEmpty: "拖一張卡片到這裡，或用下面的新增功能加入還沒決定哪天去的地點",
-    addToInbox: "新增到待排清單", addItem: "新增項目", inputContent: "輸入內容",
+    addToInbox: "新增到待排清單", pasteSmart: "貼上文字，自動辨識地點", pasteGo: "辨識並加入", pasteBusy: "辨識中…", pastePlaceholder: "貼上 Threads、網頁或地圖上複製的文字", addItem: "新增項目", inputContent: "輸入內容",
     dayEmpty: "這天還沒有安排行程", collapseMap: "收合地圖", expandMap: "展開地圖",
     mapHint: "點左邊日期上方的日期標題，切換地圖內容",
     edit: "編輯", openInMaps: "在 Google Maps 開啟", delete: "刪除",
@@ -1133,7 +1143,7 @@ const STRINGS = {
     departureDate: "Start date", returnDate: "End date", done: "Done",
     inboxLabel: "Unscheduled (no date yet)",
     inboxEmpty: "Drag a card here, or use Add below for places without a date yet",
-    addToInbox: "Add to unscheduled", addItem: "Add item", inputContent: "Enter text",
+    addToInbox: "Add to unscheduled", pasteSmart: "Paste text to detect places", pasteGo: "Detect & add", pasteBusy: "Detecting…", pastePlaceholder: "Paste text copied from Threads, a web page or a map", addItem: "Add item", inputContent: "Enter text",
     dayEmpty: "Nothing planned for this day yet", collapseMap: "Hide map", expandMap: "Show map",
     mapHint: "Click a date header on the left to switch the map",
     edit: "Edit", openInMaps: "Open in Google Maps", delete: "Delete",
@@ -1587,6 +1597,36 @@ function QuickAdd({ title, placeholder, okLabel, onSubmit, onClose }) {
   );
 }
 
+/* 貼上文字 → 自動辨識地點 → 加進目前旅程的待排清單 */
+function SmartPaste({ T, onSubmit }) {
+  const [open, setOpen] = useState(false);
+  const [val, setVal] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState("");
+  const go = async () => {
+    if (!val.trim() || busy) return;
+    setBusy(true); setMsg("");
+    const r = await onSubmit(val.trim());
+    setBusy(false);
+    setMsg(r.message);
+    if (r.ok) { setVal(""); }
+  };
+  return (
+    <div className="spaste sortable-ignore">
+      <button className="spaste__toggle" onClick={() => setOpen((v) => !v)}>
+        <Sparkles size={13} /> {T.pasteSmart}
+      </button>
+      {open && (
+        <div className="spaste__box">
+          <textarea rows={3} value={val} placeholder={T.pastePlaceholder} onChange={(e) => setVal(e.target.value)} />
+          <button className="spaste__go" disabled={!val.trim() || busy} onClick={go}>{busy ? T.pasteBusy : T.pasteGo}</button>
+        </div>
+      )}
+      {msg && <div className="spaste__msg">{msg}</div>}
+    </div>
+  );
+}
+
 /* 帳號選單（電腦：側欄底部彈出；手機：底部面板） */
 function AccountMenu({ T, lang, setLang, layoutPref, setLayout, onExport, exportStatus, onSignOut, userEmail }) {
   const layouts = [["auto", T.layoutAuto], ["desktop", T.desktopView], ["mobile", T.mobileView]];
@@ -1622,6 +1662,7 @@ function App({ onSignOut, sessionEmail }) {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
   const [tripId, setTripId] = useState(null);
+  const tripIdRef = useRef(null);
   const [trips, setTrips] = useState([]);
   const [tripName, setTripName] = useState("");
   const [showNewTrip, setShowNewTrip] = useState(false);
@@ -1960,13 +2001,36 @@ function App({ onSignOut, sessionEmail }) {
   const assignDay = async (id, dayKey) => {
     await moveItem(id, dayKey, manualListFor(dayKey).length);
   };
+  tripIdRef.current = tripId;
+  // 手動新增／改名的地點沒有座標，地圖就連不起來；這裡在背景自動補座標，補好再重新讀取
+  const geoTimerRef = useRef(null);
+  const runGeocode = async (tid) => {
+    try {
+      const res = await fetch(EDGE_FUNCTION_URL, {
+        method: "POST",
+        headers: { apikey: SUPABASE_ANON_KEY, "Content-Type": "application/json" },
+        body: JSON.stringify({ trip_id: tid, backfill: true }),
+      });
+      const data = await res.json();
+      if (data && data.updated_count > 0 && tripIdRef.current === tid) {
+        const { data: rows } = await db.from("itinerary_items").select("*").eq("trip_id", tid);
+        if (rows) setItems(rows.map(itemFromDb));
+      }
+    } catch (e) { /* 補不到就算了，之後可以按「補齊座標／翻譯」 */ }
+  };
+  // 連續新增時合併成一次（停 2.5 秒才送出），避免重複查詢
+  const autoGeocode = () => {
+    const tid = tripId;
+    clearTimeout(geoTimerRef.current);
+    geoTimerRef.current = setTimeout(() => runGeocode(tid), 2500);
+  };
   const handleAdd = async (dayKey, name) => {
     const { data, error } = await db.from("itinerary_items").insert({ trip_id: tripId, day: dayKey, time: "", name, note: "" }).select().single();
-    if (!error) setItems((prev) => [...prev, itemFromDb(data)]);
+    if (!error) { setItems((prev) => [...prev, itemFromDb(data)]); autoGeocode(); }
   };
   const handleAddTransit = async (dayKey, name) => {
     const { data, error } = await db.from("itinerary_items").insert({ trip_id: tripId, day: dayKey, time: "", name, note: "", is_transit: true }).select().single();
-    if (!error) setItems((prev) => [...prev, itemFromDb(data)]);
+    if (!error) { setItems((prev) => [...prev, itemFromDb(data)]); autoGeocode(); }
   };
   const handleToggleBooked = async (id) => {
     const target = items.find((it) => it.id === id);
@@ -1984,16 +2048,21 @@ function App({ onSignOut, sessionEmail }) {
   };
   const handleAddInbox = async (name) => {
     const { data, error } = await db.from("itinerary_items").insert({ trip_id: tripId, day: null, time: "", name, note: "" }).select().single();
-    if (!error) setItems((prev) => [...prev, itemFromDb(data)]);
+    if (!error) { setItems((prev) => [...prev, itemFromDb(data)]); autoGeocode(); }
   };
   const handleDelete = async (id) => {
     setItems((prev) => prev.filter((it) => it.id !== id));
     await db.from("itinerary_items").delete().eq("id", id);
   };
   const handleEditSave = async (id, draft) => {
-    setItems((prev) => prev.map((it) => (it.id === id ? { ...it, ...draft } : it)));
+    const before = items.find((it) => it.id === id);
+    const renamed = before && (before.name || "").trim() !== (draft.name || "").trim();
+    setItems((prev) => prev.map((it) => (it.id === id ? { ...it, ...draft, ...(renamed ? { lat: null, lng: null } : {}) } : it)));
     setEditingId(null);
-    await db.from("itinerary_items").update({ time: draft.time, name: draft.name, note: draft.note }).eq("id", id);
+    const patch = { time: draft.time, name: draft.name, note: draft.note };
+    if (renamed) Object.assign(patch, { lat: null, lng: null, name_en: null, note_en: null });
+    await db.from("itinerary_items").update(patch).eq("id", id);
+    if (renamed) autoGeocode();
   };
 
   /* ---- 航班 CRUD ---- */
@@ -2056,6 +2125,28 @@ function App({ onSignOut, sessionEmail }) {
   };
 
   const [backfillStatus, setBackfillStatus] = useState("");
+  const handleSmartPaste = async (text) => {
+    try {
+      const { data: sd } = await db.auth.getSession();
+      const jwt = sd && sd.session ? sd.session.access_token : null;
+      const res = await fetch(EDGE_FUNCTION_URL, {
+        method: "POST",
+        headers: { apikey: SUPABASE_ANON_KEY, Authorization: "Bearer " + (jwt || SUPABASE_ANON_KEY), "Content-Type": "application/json" },
+        body: JSON.stringify({ text, trip_id: tripId }),
+      });
+      const data = await res.json();
+      if (!res.ok || data.error || !data.created_count) {
+        return { ok: false, message: (lang === "en" ? "Nothing added: " : "沒有加入：") + (data.error || (lang === "en" ? "no place found" : "沒有辨識出地點")) };
+      }
+      const { data: itemsData } = await db.from("itinerary_items").select("*").eq("trip_id", tripId);
+      if (itemsData) setItems(itemsData.map(itemFromDb));
+      const names = (data.names || []).join("、");
+      return { ok: true, message: (lang === "en" ? "Added " + data.created_count + ": " : "已加入 " + data.created_count + " 個：") + names };
+    } catch (e) {
+      return { ok: false, message: (lang === "en" ? "Error: " : "發生錯誤：") + String(e) };
+    }
+  };
+
   const handleBackfillLocations = async () => {
     setBackfillStatus(T.backfilling);
     try {
@@ -2287,11 +2378,13 @@ function App({ onSignOut, sessionEmail }) {
                   </div>
                 ))}
                 <AddInline onAdd={handleAddInbox} placeholder={T.addToInbox} inputPlaceholder={T.inputContent} variant="ag" wide />
+<SmartPaste T={T} onSubmit={handleSmartPaste} />
               </div>
             )}
             {inboxItems.length === 0 && (
               <div style={{ marginTop: 10 }}>
                 <AddInline onAdd={handleAddInbox} placeholder={T.addToInbox} inputPlaceholder={T.inputContent} variant="ag" />
+<SmartPaste T={T} onSubmit={handleSmartPaste} />
               </div>
             )}
           </div>
@@ -2565,6 +2658,7 @@ function App({ onSignOut, sessionEmail }) {
           </div>
           <div className="sortable-ignore" style={{ marginTop: 10 }}>
             <AddInline onAdd={handleAddInbox} placeholder={T.addToInbox} inputPlaceholder={T.inputContent} />
+<SmartPaste T={T} onSubmit={handleSmartPaste} />
           </div>
         </Sheet>
       )}

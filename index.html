@@ -2024,6 +2024,15 @@ function App({ onSignOut, sessionEmail }) {
     clearTimeout(geoTimerRef.current);
     geoTimerRef.current = setTimeout(() => runGeocode(tid), 2500);
   };
+  // 打開旅程時，如果有地點還沒有座標（例如早期手動輸入的），自動補一次（每趟旅程每次開網站只補一次）
+  const geoTriedRef = useRef({});
+  useEffect(() => {
+    if (loading || !tripId || geoTriedRef.current[tripId]) return;
+    if (items.some((it) => it.lat == null && !it.nameEn)) {
+      geoTriedRef.current[tripId] = true;
+      autoGeocode();
+    }
+  }, [loading, tripId, items]);
   const handleAdd = async (dayKey, name) => {
     const { data, error } = await db.from("itinerary_items").insert({ trip_id: tripId, day: dayKey, time: "", name, note: "" }).select().single();
     if (!error) { setItems((prev) => [...prev, itemFromDb(data)]); autoGeocode(); }

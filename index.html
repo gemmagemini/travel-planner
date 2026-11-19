@@ -413,24 +413,24 @@ a:hover { color: var(--ag-accent-hover); }
 .ag-main { flex: 1; min-width: 0; padding: 0 0 28px 36px; }
 
 /* 右側地圖欄：收合時是細長頁籤，展開時把日期卡片往左推（不浮在畫面上） */
-.ag-mapcol { flex: 0 0 clamp(320px, 34vw, 480px); height: 100vh; box-sizing: border-box; padding: 16px 20px 16px 8px; display: flex; }
-.ag-mapcol .ag-map { height: 100%; }
-.ag-mapcol .ag-map__canvas { min-height: 0; }
-.ag-maprail { flex: 0 0 44px; display: flex; align-items: flex-start; padding-top: 34px; }
+.ag-maprail { flex: 0 0 58px; display: flex; align-items: flex-start; padding: 24px 12px 0 6px; box-sizing: border-box; }
 .ag-maprail--open { flex: 0 0 470px; align-items: stretch; padding: 24px 36px 28px 0; }
 .ag-maprail__tab {
-  width: 32px;
-  padding: 16px 0;
+  position: sticky; top: 16px;
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  width: 40px; padding: 14px 0;
   background: var(--ag-dark);
   color: #f0efe1;
   border: 0;
-  border-radius: 10px 0 0 10px;
+  border-radius: 14px;
   font: inherit; font-size: 13px;
-  letter-spacing: .12em;
-  writing-mode: vertical-rl;
-  text-align: center;
   cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,.12);
 }
+.ag-maprail__tab span { writing-mode: vertical-rl; letter-spacing: .2em; }
+.ag-maprail__tab:hover { background: var(--ag-dark-2, #3a3d2e); }
+.ag-maprail--open .ag-map { align-self: flex-start; position: sticky; top: 16px; height: min(680px, calc(100vh - 40px)); }
+.ag-maprail--open .ag-map__canvas { min-height: 0; }
 
 /* --------------------------------------------------------------------------
    待排清單
@@ -588,7 +588,12 @@ a:hover { color: var(--ag-accent-hover); }
   font-size: 11.5px;
   color: #dfe0cd;
 }
-.ag-time { font-family: var(--ag-font-num); font-size: 17px; color: var(--ag-dark-time); }
+.ag-time { font-family: var(--ag-font-num); font-size: 17px; color: var(--ag-dark-time); white-space: nowrap; flex: none; }
+.ag-time--hotel { color: #e8891c; }
+.ag-chip { white-space: nowrap; flex: none; }
+.ag-item__acts { flex: none; }
+.logi-time { color: #e8891c; }
+.card-time--hotel { color: #e8891c; }
 
 /* 編輯中的卡片（輸入狀態） */
 .ag-item--editing {
@@ -657,6 +662,11 @@ a:hover { color: var(--ag-accent-hover); }
 .ag-map__wd,
 .ag-map__count { font-size: 13px; color: var(--ag-ink-on-dark-2); }
 .ag-map__count { font-size: 12.5px; }
+.ag-map__hotelbtn { margin-left: auto; display: inline-flex; align-items: center; gap: 5px; border: 1px solid var(--ag-dark-dash); background: transparent; color: var(--ag-ink-on-dark-2); border-radius: 999px; padding: 4px 10px; font: inherit; font-size: 12px; cursor: pointer; }
+.ag-map__hotelbtn:hover { color: var(--ag-ink-on-dark); }
+.ag-map__hotelbtn.is-on { background: #e8891c; border-color: #e8891c; color: #fff; }
+.mob-hotelbtn { position: absolute; top: 10px; left: 10px; z-index: 5; display: inline-flex; align-items: center; gap: 5px; border: 1px solid var(--ag-line); background: var(--ag-surface); color: var(--ag-ink-2); border-radius: 999px; padding: 6px 12px; font: inherit; font-size: 12.5px; cursor: pointer; box-shadow: 0 1px 4px rgba(0,0,0,.12); }
+.mob-hotelbtn.is-on { background: #e8891c; border-color: #e8891c; color: #fff; }
 .ag-map__close { border: 0; background: none; cursor: pointer; color: var(--ag-ink-on-dark-2); display: inline-flex; }
 .ag-map__close:hover { color: var(--ag-ink-on-dark); }
 .ag-map__canvas {
@@ -692,7 +702,7 @@ body { font-family: var(--ag-font-ui); }
 .logi-icon { width: 30px; height: 30px; border-radius: var(--ag-r-item); background: var(--ag-surface-sunk); display: flex; align-items: center; justify-content: center; color: var(--ag-ink); flex: none; }
 .logi-main { flex: 1; min-width: 0; }
 .logi-top-row { display: flex; align-items: center; gap: 8px; margin-bottom: 2px; }
-.logi-date { font-family: var(--ag-font-num); font-size: 13px; color: var(--ag-accent); }
+.logi-date { font-family: var(--ag-font-num); font-size: 13px; color: var(--ag-accent); white-space: nowrap; }
 .logi-tag { font-size: 10.5px; background: var(--ag-surface-sunk); color: var(--ag-ink-2); padding: 1px 6px; border-radius: 6px; }
 .logi-title { font-size: 14px; font-weight: 600; }
 .logi-sub { font-size: 12px; color: var(--ag-ink-3); margin-top: 1px; }
@@ -815,6 +825,13 @@ body { font-family: var(--ag-font-ui); }
 .login-card button:disabled { opacity: .5; }
 .login-error { font-size: 12.5px; color: var(--ag-accent); }
 
+.ag-dragrow { position: relative; transition: opacity .12s ease; }
+.ag-dragrow.is-dragging { opacity: .35; }
+.ag-dragrow.drop-before::before, .ag-dragrow.drop-after::after { content: ""; position: absolute; left: 4px; right: 4px; height: 3px; border-radius: 3px; background: #e8891c; z-index: 3; pointer-events: none; }
+.ag-dragrow.drop-before::before { top: -5px; }
+.ag-dragrow.drop-after::after { bottom: -5px; }
+.ag-day--over { box-shadow: 0 0 0 2px rgba(232,137,28,.55) inset; transition: box-shadow .12s ease; }
+.ag-backlog--over { box-shadow: 0 0 0 2px rgba(232,137,28,.55) inset; }
 .drag-zone.drag-over { outline: 2px dashed var(--ag-accent); outline-offset: 2px; border-radius: var(--ag-r-item); }
 .loading-screen, .error-screen { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: var(--ag-bg); color: var(--ag-ink); font-family: var(--ag-font-ui); text-align: center; padding: 20px; }
 .error-screen pre { background: var(--ag-surface); padding: 10px; border-radius: 8px; font-size: 11px; max-width: 500px; overflow: auto; text-align: left; }
@@ -899,6 +916,8 @@ body { font-family: var(--ag-font-ui); }
 .ag-side__logo { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .ag-side__toggle { flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border: 0; border-radius: 9px; background: transparent; color: var(--ag-ink-3); cursor: pointer; }
 .ag-side__toggle:hover { background: var(--ag-surface-sunk); color: var(--ag-ink); }
+.ag-side__gem { display: inline-flex; border: 0; background: transparent; padding: 7px; border-radius: 12px; cursor: pointer; }
+.ag-side__gem:hover { background: var(--ag-surface-sunk); }
 .ag-side.is-collapsed { flex-basis: 68px; }
 .ag-side.is-collapsed .ag-side__logo { flex-direction: column; justify-content: flex-start; gap: 14px; padding: 24px 0 12px; }
 .ag-side.is-collapsed .ag-side__acct { padding: 12px 0; display: flex; justify-content: center; }
@@ -956,8 +975,6 @@ body { font-family: var(--ag-font-ui); }
 .ag-utab:hover { color: var(--ag-ink); }
 .ag-utab.is-active { color: var(--ag-ink); font-weight: 600; border-bottom-color: var(--ag-dark); }
 .ag-pane__body { padding-bottom: 28px; }
-.ag-maprail:not(.ag-maprail--open) { display: none; }
-.ag-maprail__tab { display: none; }
 
 /* ==========================================================================
    手機版 C
@@ -1144,7 +1161,7 @@ const STRINGS = {
     inboxLabel: "待排清單（還沒排定日期）",
     inboxEmpty: "拖一張卡片到這裡，或用下面的新增功能加入還沒決定哪天去的地點",
     addToInbox: "新增到待排清單", pasteSmart: "貼上文字，自動辨識地點", pasteGo: "辨識並加入", pasteBusy: "辨識中…", pastePlaceholder: "貼上 Threads、網頁或地圖上複製的文字", addItem: "新增項目", inputContent: "輸入內容",
-    dayEmpty: "這天還沒有安排行程", collapseMap: "收合地圖", expandMap: "展開地圖",
+    dayEmpty: "這天還沒有安排行程", collapseMap: "收合地圖", expandMap: "展開地圖", showHotels: "顯示住宿",
     mapHint: "點左邊日期上方的日期標題，切換地圖內容",
     edit: "編輯", openInMaps: "在 Google Maps 開啟", delete: "刪除",
     deleteFlightHotel: "刪除（會一併從航班・飯店移除）",
@@ -1176,7 +1193,7 @@ const STRINGS = {
     inboxLabel: "Unscheduled (no date yet)",
     inboxEmpty: "Drag a card here, or use Add below for places without a date yet",
     addToInbox: "Add to unscheduled", pasteSmart: "Paste text to detect places", pasteGo: "Detect & add", pasteBusy: "Detecting…", pastePlaceholder: "Paste text copied from Threads, a web page or a map", addItem: "Add item", inputContent: "Enter text",
-    dayEmpty: "Nothing planned for this day yet", collapseMap: "Hide map", expandMap: "Show map",
+    dayEmpty: "Nothing planned for this day yet", collapseMap: "Hide map", expandMap: "Show map", showHotels: "Show hotels",
     mapHint: "Click a date header on the left to switch the map",
     edit: "Edit", openInMaps: "Open in Google Maps", delete: "Delete",
     deleteFlightHotel: "Delete (also removes it from Flights & Hotels)",
@@ -1270,6 +1287,8 @@ function guessGemKind(item) {
   const foodWords = ["餐廳", "咖啡", "拉麵", "燒肉", "居酒屋", "甜點", "烘焙", "酒吧", "牛丼", "壽司", "丼", "カフェ", "restaurant", "cafe", "coffee", "bar", "bakery", "ramen", "izakaya", "bistro", "food", "dining", "dessert", "noodle", "tea room"];
   return foodWords.some((w) => text.includes(w)) ? "food" : "spot";
 }
+const CalendarDays = (p) => <Icon {...p}><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4" /><path d="M8 2v4" /><path d="M3 10h18" /><path d="M8 14h.01" /><path d="M12 14h.01" /><path d="M16 14h.01" /><path d="M8 18h.01" /><path d="M12 18h.01" /></Icon>;
+const InboxIcon = (p) => <Icon {...p}><path d="M22 12h-6l-2 3h-4l-2-3H2" /><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z" /></Icon>;
 const PanelLeft = (p) => <Icon {...p}><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M9 3v18" /></Icon>;
 const Monitor = (p) => <Icon {...p}><rect x="2" y="3" width="20" height="14" rx="2" /><path d="M8 21h8" /><path d="M12 17v4" /></Icon>;
 const Smartphone = (p) => <Icon {...p}><rect x="6" y="2" width="12" height="20" rx="2" /><path d="M11 18h2" /></Icon>;
@@ -1282,7 +1301,7 @@ const GripVertical = (p) => <Icon {...p}><circle cx="9" cy="6" r="1" /><circle c
 /* ============ DB <-> App 資料映射 ============ */
 const flightFromDb = (r) => ({ id: r.id, date: r.date, time: r.time || "", flightNo: r.flight_no || "", from: r.from_code || "", to: r.to_code || "", terminal: r.terminal || "", note: r.note || "" });
 const flightToDb = (d) => ({ date: d.date, time: d.time, flight_no: d.flightNo, from_code: d.from, to_code: d.to, terminal: d.terminal, note: d.note });
-const hotelFromDb = (r) => ({ id: r.id, name: r.name || "", address: r.address || "", checkin: r.checkin, checkinTime: r.checkin_time || "", checkout: r.checkout, checkoutTime: r.checkout_time || "", confirmation: r.confirmation || "" });
+const hotelFromDb = (r) => ({ lat: r.lat ?? null, lng: r.lng ?? null, id: r.id, name: r.name || "", address: r.address || "", checkin: r.checkin, checkinTime: r.checkin_time || "", checkout: r.checkout, checkoutTime: r.checkout_time || "", confirmation: r.confirmation || "" });
 const hotelToDb = (d) => ({ name: d.name, address: d.address, checkin: d.checkin, checkin_time: d.checkinTime, checkout: d.checkout, checkout_time: d.checkoutTime, confirmation: d.confirmation });
 const itemFromDb = (r) => ({ id: r.id, day: r.day, time: r.time || "", name: r.name, note: r.note || "", nameEn: r.name_en || "", noteEn: r.note_en || "", sortOrder: r.sort_order ?? 0, lat: r.lat ?? null, lng: r.lng ?? null, booked: !!r.booked, important: !!r.important, isTransit: !!r.is_transit });
 
@@ -1412,7 +1431,7 @@ function AutoItemCard({ item, T, variant, onMapClick, onDelete }) {
       <article className="ag-item">
         <header className="ag-item__bar">
           <span className="ag-chip"><IconC size={11} /> {item.tagLabel}</span>
-          {item.time && <span className="ag-time">{item.time}</span>}
+          {item.time && <span className={"ag-time" + (item.kind === "hotel" ? " ag-time--hotel" : "")}>{item.time}</span>}
           <span className="ag-item__acts">
             <button title={tt.editFlightHotel} onClick={item.onEdit}><Pencil size={13} /></button>
             {item.mapQuery && <button title={tt.openInMaps} onClick={() => onMapClick(item.mapQuery)}><MapPin size={13} /></button>}
@@ -1428,7 +1447,7 @@ function AutoItemCard({ item, T, variant, onMapClick, onDelete }) {
     <div className="card auto">
       <div className="card-top">
         <span className="card-kind-tag"><IconC size={10} /> {item.tagLabel}</span>
-        {item.time && <span className="card-time">{item.time}</span>}
+        {item.time && <span className={"card-time" + (item.kind === "hotel" ? " card-time--hotel" : "")}>{item.time}</span>}
         <span className="card-acts">
           <button className="icon-btn edit-btn" title={tt.editFlightHotel} onClick={item.onEdit}><Pencil size={12} /></button>
           {item.mapQuery && <button className="icon-btn map-btn" title={tt.openInMaps} onClick={() => onMapClick(item.mapQuery)}><MapPin size={13} /></button>}
@@ -1528,7 +1547,7 @@ function HotelCard({ hotel, T, isEditing, onEditStart, onEditSave, onDelete, onM
     <div className="logi-card">
       <div className="logi-icon"><Building2 size={16} /></div>
       <div className="logi-main">
-        <div className="logi-top-row"><span className="logi-date">{fmtMd(hotel.checkin)} {hotel.checkinTime} – {fmtMd(hotel.checkout)} {hotel.checkoutTime}</span></div>
+        <div className="logi-top-row"><span className="logi-date">{fmtMd(hotel.checkin)} <span className="logi-time">{hotel.checkinTime}</span> – {fmtMd(hotel.checkout)} <span className="logi-time">{hotel.checkoutTime}</span></span></div>
         <div className="logi-title">{hotel.name}</div>
         <div className="logi-sub">{hotel.address}</div>
       </div>
@@ -1754,6 +1773,8 @@ function App({ onSignOut, sessionEmail }) {
   const desktopGridRef = useRef(null);
   const [mapOpen, setMapOpen] = useState(false);
   const [mapDayIdx, setMapDayIdx] = useState(0);
+  const [showHotels, setShowHotels] = useState(() => { try { return localStorage.getItem("agemda_hotels") === "1"; } catch (e) { return false; } });
+  const toggleHotels = () => setShowHotels((v) => { const nv = !v; try { localStorage.setItem("agemda_hotels", nv ? "1" : "0"); } catch (e) {} return nv; });
 
   useEffect(() => {
     if (!isMobileForDrag()) return;
@@ -1932,6 +1953,7 @@ function App({ onSignOut, sessionEmail }) {
     const map = mapObjRef.current;
 
     if (map.__markers) map.__markers.forEach((m) => m.setMap(null));
+    if (map.__hmarkers) map.__hmarkers.forEach((m) => m.setMap(null));
     if (map.__line) map.__line.setMap(null);
 
     const markers = points.map(
@@ -1946,6 +1968,29 @@ function App({ onSignOut, sessionEmail }) {
     );
     map.__markers = markers;
 
+    // 住宿：只顯示當天住的那間（入住日 ≤ 當天 ≤ 退房日），房子形狀、橘色、不編號、不連線
+    const dayHotels = showHotels
+      ? hotels.filter((h) => h.lat != null && h.lng != null && (!h.checkin || h.checkin <= day.key) && (!h.checkout || h.checkout >= day.key))
+      : [];
+    map.__hmarkers = dayHotels.map(
+      (h) =>
+        new google.maps.Marker({
+          position: { lat: h.lat, lng: h.lng },
+          map,
+          title: h.name,
+          zIndex: 5,
+          icon: {
+            path: "M12 2.5L1.5 12H5v9.5h5.2v-6h3.6v6H19V12h3.5z",
+            fillColor: "#e8891c",
+            fillOpacity: 1,
+            strokeColor: "#ffffff",
+            strokeWeight: 1.6,
+            scale: 1.15,
+            anchor: new google.maps.Point(12, 12),
+          },
+        })
+    );
+
     if (points.length > 1) {
       map.__line = new google.maps.Polyline({
         path: points.map((p) => ({ lat: p.lat, lng: p.lng })),
@@ -1956,14 +2001,15 @@ function App({ onSignOut, sessionEmail }) {
       });
     }
 
-    if (points.length > 0) {
+    if (points.length > 0 || dayHotels.length > 0) {
       const bounds = new google.maps.LatLngBounds();
       points.forEach((p) => bounds.extend({ lat: p.lat, lng: p.lng }));
+      dayHotels.forEach((h) => bounds.extend({ lat: h.lat, lng: h.lng }));
       map.fitBounds(bounds, 40);
     } else {
       google.maps.event.trigger(map, "resize");
     }
-  }, [mapOpen, mapDayIdx, items, days, viewMode]);
+  }, [mapOpen, mapDayIdx, items, days, viewMode, hotels, showHotels]);
 
   const itemsForDay = (dayKey) => items.filter((it) => it.day === dayKey);
   const inboxItems = items.filter((it) => !it.day).sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
@@ -2014,7 +2060,22 @@ function App({ onSignOut, sessionEmail }) {
 
   /* ---- 行程項目 CRUD ---- */
   const handleDragStart = (e, id) => { setDragItemId(id); e.dataTransfer.effectAllowed = "move"; };
-  const handleDragEnd = () => setDragItemId(null);
+  const handleDragEnd = () => { setDragItemId(null); setDragOver(null); };
+  // 拖曳時：游標在卡片上半就插到它前面、下半就插到它後面，並用橘線顯示會放在哪裡
+  const [dragOver, setDragOver] = useState(null);
+  const overCard = (e, dayKeyOrNull, id) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const r = e.currentTarget.getBoundingClientRect();
+    const after = e.clientY > r.top + r.height / 2;
+    setDragOver((prev) => (prev && prev.day === dayKeyOrNull && prev.id === id && prev.after === after ? prev : { day: dayKeyOrNull, id, after }));
+  };
+  const overZone = (e, dayKeyOrNull) => {
+    e.preventDefault();
+    setDragOver((prev) => (prev && prev.day === dayKeyOrNull && prev.id === null ? prev : { day: dayKeyOrNull, id: null, after: true }));
+  };
+  const dropClass = (dayKeyOrNull, id) =>
+    dragItemId && dragOver && dragOver.day === dayKeyOrNull && dragOver.id === id && id !== dragItemId ? (dragOver.after ? " drop-after" : " drop-before") : "";
 
   const moveItem = async (id, targetDayKeyOrNull, targetIndex) => {
     const targetList = manualListFor(targetDayKeyOrNull).filter((it) => it.id !== id);
@@ -2029,6 +2090,8 @@ function App({ onSignOut, sessionEmail }) {
     e.preventDefault();
     e.stopPropagation();
     const id = dragItemId;
+    setDragItemId(null);
+    setDragOver(null);
     if (!id) return;
     await moveItem(id, dayKey, manualListFor(dayKey).length);
   };
@@ -2036,10 +2099,14 @@ function App({ onSignOut, sessionEmail }) {
     e.preventDefault();
     e.stopPropagation();
     const id = dragItemId;
+    const r = e.currentTarget.getBoundingClientRect();
+    const after = e.clientY > r.top + r.height / 2;
+    setDragItemId(null);
+    setDragOver(null);
     if (!id || id === beforeItemId) return;
     const list = manualListFor(dayKeyOrNull).filter((it) => it.id !== id);
     const idx = list.findIndex((it) => it.id === beforeItemId);
-    await moveItem(id, dayKeyOrNull, idx === -1 ? list.length : idx);
+    await moveItem(id, dayKeyOrNull, idx === -1 ? list.length : idx + (after ? 1 : 0));
   };
   const assignDay = async (id, dayKey) => {
     await moveItem(id, dayKey, manualListFor(dayKey).length);
@@ -2059,6 +2126,10 @@ function App({ onSignOut, sessionEmail }) {
         const { data: rows } = await db.from("itinerary_items").select("*").eq("trip_id", tid);
         if (rows) setItems(rows.map(itemFromDb));
       }
+      if (data && data.hotel_updated > 0 && tripIdRef.current === tid) {
+        const { data: hrows } = await db.from("hotels").select("*").eq("trip_id", tid);
+        if (hrows) setHotels(hrows.map(hotelFromDb));
+      }
     } catch (e) { /* 補不到就算了，之後可以按「補齊座標／翻譯」 */ }
   };
   // 連續新增時合併成一次（停 2.5 秒才送出），避免重複查詢
@@ -2071,7 +2142,7 @@ function App({ onSignOut, sessionEmail }) {
   const geoTriedRef = useRef({});
   useEffect(() => {
     if (loading || !tripId || geoTriedRef.current[tripId]) return;
-    if (items.some((it) => it.lat == null && !it.nameEn)) {
+    if (items.some((it) => it.lat == null && !it.nameEn) || hotels.some((h) => h.lat == null && (h.name || h.address))) {
       geoTriedRef.current[tripId] = true;
       autoGeocode();
     }
@@ -2138,9 +2209,12 @@ function App({ onSignOut, sessionEmail }) {
     if (!error) setHotels((prev) => [...prev, hotelFromDb(data)]);
   };
   const handleHotelSave = async (id, draft) => {
-    setHotels((prev) => prev.map((h) => (h.id === id ? draft : h)));
+    const old = hotels.find((h) => h.id === id);
+    const placeChanged = !old || old.name !== draft.name || old.address !== draft.address;
+    setHotels((prev) => prev.map((h) => (h.id === id ? (placeChanged ? { ...draft, lat: null, lng: null } : { ...draft, lat: h.lat, lng: h.lng }) : h)));
     setEditingId(null);
-    await db.from("hotels").update(hotelToDb(draft)).eq("id", id);
+    await db.from("hotels").update(placeChanged ? { ...hotelToDb(draft), lat: null, lng: null } : hotelToDb(draft)).eq("id", id);
+    if (placeChanged) autoGeocode();
   };
   const handleHotelDelete = async (id) => {
     setHotels((prev) => prev.filter((h) => h.id !== id));
@@ -2396,12 +2470,12 @@ function App({ onSignOut, sessionEmail }) {
       {section === "itinerary" && !isMobile && (
         <React.Fragment>
           <div
-            className="ag-backlog"
-            onDragOver={(e) => e.preventDefault()}
+            className={"ag-backlog" + (dragItemId && dragOver && dragOver.day === null ? " ag-backlog--over" : "")}
+            onDragOver={(e) => overZone(e, null)}
             onDrop={(e) => handleDropOnDay(e, null)}
           >
             <div className="ag-backlog__head">
-              <ListChecks size={15} />
+              <InboxIcon size={15} />
               <span className="ag-backlog__title">{T.inboxLabel}</span>
               {inboxItems.length > 0 && <span className="ag-backlog__count">{inboxItems.length}</span>}
             </div>
@@ -2410,7 +2484,7 @@ function App({ onSignOut, sessionEmail }) {
             ) : (
               <div className="ag-backlog__track" ref={inboxListRef} data-day="">
                 {inboxItems.map((it) => (
-                  <div key={it.id} data-item-id={it.id} onDragOver={(e) => e.preventDefault()} onDrop={(e) => handleDropBeforeCard(e, null, it.id)}>
+                  <div key={it.id} data-item-id={it.id} className={"ag-dragrow" + dropClass(null, it.id) + (dragItemId === it.id ? " is-dragging" : "")} onDragOver={(e) => overCard(e, null, it.id)} onDrop={(e) => handleDropBeforeCard(e, null, it.id)}>
                     <ItemCard
                       item={displayItem(it)}
                       lang={lang}
@@ -2445,7 +2519,7 @@ function App({ onSignOut, sessionEmail }) {
           <div className="ag-main">
             <div className="ag-days" ref={desktopGridRef}>
               {days.map((d, dayIdx) => (
-                <div key={d.key} className={`ag-day ${mapOpen && dayIdx === mapDayIdx ? "ag-day--active" : ""}`} onDragOver={(e) => e.preventDefault()} onDrop={(e) => handleDropOnDay(e, d.key)}>
+                <div key={d.key} className={`ag-day ${mapOpen && dayIdx === mapDayIdx ? "ag-day--active" : ""}${dragItemId && dragOver && dragOver.day === d.key ? " ag-day--over" : ""}`} onDragOver={(e) => overZone(e, d.key)} onDrop={(e) => handleDropOnDay(e, d.key)}>
                   <div className="ag-day__head" onClick={() => setMapDayIdx(dayIdx)} style={{ cursor: "pointer" }}>
                     <span className="ag-day__date">{d.md}</span>
                     <span className="ag-day__wd">{weekdayLabel(d.weekdayIndex, lang)}</span>
@@ -2455,7 +2529,7 @@ function App({ onSignOut, sessionEmail }) {
                       <AutoItemCard key={it.id} item={it} T={T} variant="ag" onMapClick={handleMapClick} />
                     ))}
                     {getDayCards(d.key).manual.map((it) => (
-                      <div key={it.id} onDragOver={(e) => e.preventDefault()} onDrop={(e) => handleDropBeforeCard(e, d.key, it.id)}>
+                      <div key={it.id} className={"ag-dragrow" + dropClass(d.key, it.id) + (dragItemId === it.id ? " is-dragging" : "")} onDragOver={(e) => overCard(e, d.key, it.id)} onDrop={(e) => handleDropBeforeCard(e, d.key, it.id)}>
                         <ItemCard item={it} lang={lang} T={T} variant="ag" draggable={editingId !== it.id} onDragStart={handleDragStart} onDragEnd={handleDragEnd} onMapClick={handleMapClick} onDelete={handleDelete} onToggleBooked={handleToggleBooked} onToggleImportant={handleToggleImportant} isEditing={editingId === it.id} onEditStart={setEditingId} onEditSave={handleEditSave} />
                       </div>
                     ))}
@@ -2470,28 +2544,33 @@ function App({ onSignOut, sessionEmail }) {
             </div>
           </div>
 
-          </div>
-        </React.Fragment>
-      )}
-    </React.Fragment>
-  );
-
-  // 右側整欄地圖（固定在視窗右邊，不跟著行程捲動）
-  const mapColumn = (
-    <aside className="ag-mapcol">
-      <div className="ag-map">
+          <div className={`ag-maprail ${mapOpen ? "ag-maprail--open" : ""}`}>
+            {!mapOpen && (
+              <button className="ag-maprail__tab" onClick={() => setMapOpen(true)} title={T.expandMap}>
+                <MapPin size={15} />
+                <span>{T.expandMap}</span>
+              </button>
+            )}
+            {mapOpen && (
+              <div className="ag-map">
                 <div className="ag-map__head">
                   <span className="ag-map__date">{days[mapDayIdx] ? days[mapDayIdx].md : ""}</span>
                   <span className="ag-map__wd">{days[mapDayIdx] ? weekdayLabel(days[mapDayIdx].weekdayIndex, lang) : ""}</span>
-                  <span className="ag-map__count" style={{ marginLeft: "auto" }}>{mapPoints.length}</span>
+                  <button className={"ag-map__hotelbtn" + (showHotels ? " is-on" : "")} onClick={toggleHotels}><Building2 size={13} /> {T.showHotels}</button>
+                  <span className="ag-map__count">{mapPoints.length}</span>
                   <button className="ag-map__close" onClick={() => setMapOpen(false)}><XIcon size={16} /></button>
                 </div>
                 <div className="ag-map__canvas">
                   <div ref={mapDivRef} style={{ width: "100%", height: "100%" }}></div>
                 </div>
                 <div className="ag-map__hint">{T.mapHint}</div>
-      </div>
-    </aside>
+              </div>
+            )}
+          </div>
+          </div>
+        </React.Fragment>
+      )}
+    </React.Fragment>
   );
 
   // ================= 電腦版 B =================
@@ -2499,10 +2578,18 @@ function App({ onSignOut, sessionEmail }) {
     <div className="ag-app ag-app--side">
       <aside className={"ag-side" + (sideCollapsed ? " is-collapsed" : "")}>
         <div className="ag-side__logo">
-          {sideCollapsed ? <Gem size={26} kind="spot" /> : <AgLogo />}
-          <button className="ag-side__toggle" onClick={toggleSide} title={sideCollapsed ? (lang === "en" ? "Expand sidebar" : "展開側欄") : (lang === "en" ? "Collapse sidebar" : "收合側欄")}>
-            <PanelLeft size={18} />
-          </button>
+          {sideCollapsed ? (
+            <button className="ag-side__gem" onClick={toggleSide} title={lang === "en" ? "Expand sidebar" : "展開側欄"}>
+              <Gem size={26} kind="spot" />
+            </button>
+          ) : (
+            <React.Fragment>
+              <AgLogo />
+              <button className="ag-side__toggle" onClick={toggleSide} title={lang === "en" ? "Collapse sidebar" : "收合側欄"}>
+                <PanelLeft size={18} />
+              </button>
+            </React.Fragment>
+          )}
         </div>
         {sideCollapsed ? <div style={{ flex: 1 }} /> : <div className="ag-side__list">
           {upcomingTrips.length > 0 && (
@@ -2545,13 +2632,10 @@ function App({ onSignOut, sessionEmail }) {
             <span className="ag-titlerow__btns">
               {backfillStatus && <span className="ag-backfill-status">{backfillStatus}</span>}
               <button className="ag-backfill-btn" onClick={handleBackfillLocations}><Sparkles size={13} className={backfillStatus ? "ag-spin" : ""} /> {T.backfill}</button>
-              {section === "itinerary" && (
-                <button className="ag-mapbtn" onClick={() => setMapOpen((v) => !v)}><MapPin size={13} /> {mapOpen ? T.collapseMap : T.expandMap}</button>
-              )}
             </span>
           </div>
           <div className="ag-utabs">
-            <button className={`ag-utab ${section === "itinerary" ? "is-active" : ""}`} onClick={() => setSection("itinerary")}><ListChecks size={14} /> {T.tabItinerary}</button>
+            <button className={`ag-utab ${section === "itinerary" ? "is-active" : ""}`} onClick={() => setSection("itinerary")}><CalendarDays size={14} /> {T.tabItinerary}</button>
             <button className={`ag-utab ${section === "logistics" ? "is-active" : ""}`} onClick={() => setSection("logistics")}><Plane size={14} /> {T.tabLogistics}</button>
             <button className={`ag-utab ${section === "shopping" ? "is-active" : ""}`} onClick={() => setSection("shopping")}><ShoppingBag size={14} /> {T.tabShopping}</button>
           </div>
@@ -2561,7 +2645,6 @@ function App({ onSignOut, sessionEmail }) {
           {logiShopBlock}
         </div>
       </main>
-      {mapOpen && section === "itinerary" && mapColumn}
     </div>
   );
 
@@ -2622,7 +2705,7 @@ function App({ onSignOut, sessionEmail }) {
       {activeTab === "itinerary" && (
         <div className="mob-scroll">
           <button className="mob-inbox" onClick={() => setShowInboxSheet(true)}>
-            <ListChecks size={16} /> <span className="mob-inbox__t">{T.inboxEntry}</span>
+            <InboxIcon size={16} /> <span className="mob-inbox__t">{T.inboxEntry}</span>
             <span className="mob-inbox__n">{lang === "en" ? inboxItems.length + " places" : inboxItems.length + " 個地點"}</span>
             <span className="mob-inbox__go">›</span>
           </button>
@@ -2651,7 +2734,7 @@ function App({ onSignOut, sessionEmail }) {
 
       {activeTab === "map" && (
         <div className="mob-mapwrap">
-          <div className="mob-mapcanvas"><div ref={mapDivRef} className="map-canvas-el" style={{ width: "100%", height: "100%" }}></div></div>
+          <div className="mob-mapcanvas" style={{ position: "relative" }}><button className={"mob-hotelbtn" + (showHotels ? " is-on" : "")} onClick={toggleHotels}><Building2 size={13} /> {T.showHotels}</button><div ref={mapDivRef} className="map-canvas-el" style={{ width: "100%", height: "100%" }}></div></div>
           {mapPoints.length === 0 ? (
             <div className="mobile-map-empty mob-mapnote">{T.mapHint}</div>
           ) : (
@@ -2677,7 +2760,7 @@ function App({ onSignOut, sessionEmail }) {
       )}
 
       <nav className="mob-tabbar">
-        {[["itinerary", T.tabItinerary, ListChecks], ["logistics", T.tabLogistics, Plane], ["shopping", T.tabShop, ShoppingBag], ["map", T.tabMapShort, MapPin]].map(([k, label, Ic]) => (
+        {[["itinerary", T.tabItinerary, CalendarDays], ["logistics", T.tabLogistics, Plane], ["shopping", T.tabShop, ShoppingBag], ["map", T.tabMapShort, MapPin]].map(([k, label, Ic]) => (
           <button key={k} className={activeTab === k ? "is-on" : ""} onClick={() => goTab(k)}>
             <Ic size={20} /><span>{label}</span>
           </button>

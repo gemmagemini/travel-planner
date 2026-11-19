@@ -892,6 +892,15 @@ body { font-family: var(--ag-font-ui); }
   background: var(--ag-surface-alt); border-right: 1px solid var(--ag-line);
 }
 .ag-side__logo { padding: 26px 22px 18px; }
+.ag-side { transition: flex-basis .18s ease; }
+.ag-side__logo { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.ag-side__toggle { flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border: 0; border-radius: 9px; background: transparent; color: var(--ag-ink-3); cursor: pointer; }
+.ag-side__toggle:hover { background: var(--ag-surface-sunk); color: var(--ag-ink); }
+.ag-side.is-collapsed { flex-basis: 68px; }
+.ag-side.is-collapsed .ag-side__logo { flex-direction: column; justify-content: flex-start; gap: 14px; padding: 24px 0 12px; }
+.ag-side.is-collapsed .ag-side__acct { padding: 12px 0; display: flex; justify-content: center; }
+.ag-side.is-collapsed .ag-acctbtn { width: auto; padding: 6px; }
+.ag-side.is-collapsed .ag-acctbtn__txt, .ag-side.is-collapsed .ag-acctbtn__caret { display: none; }
 .ag-side__list { flex: 1; min-height: 0; overflow-y: auto; padding: 0 12px 12px; }
 .ag-side__group { margin-bottom: 14px; }
 .ag-side__label { font-size: 11px; letter-spacing: .08em; color: var(--ag-ink-3); padding: 6px 10px; }
@@ -1258,6 +1267,7 @@ function guessGemKind(item) {
   const foodWords = ["餐廳", "咖啡", "拉麵", "燒肉", "居酒屋", "甜點", "烘焙", "酒吧", "牛丼", "壽司", "丼", "カフェ", "restaurant", "cafe", "coffee", "bar", "bakery", "ramen", "izakaya", "bistro", "food", "dining", "dessert", "noodle", "tea room"];
   return foodWords.some((w) => text.includes(w)) ? "food" : "spot";
 }
+const PanelLeft = (p) => <Icon {...p}><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M9 3v18" /></Icon>;
 const Monitor = (p) => <Icon {...p}><rect x="2" y="3" width="20" height="14" rx="2" /><path d="M8 21h8" /><path d="M12 17v4" /></Icon>;
 const Smartphone = (p) => <Icon {...p}><rect x="6" y="2" width="12" height="20" rx="2" /><path d="M11 18h2" /></Icon>;
 const Plane = (p) => <Icon {...p}><path d="M22 2 11 13" /><path d="M22 2 15 22l-4-9-9-4Z" /></Icon>;
@@ -1710,6 +1720,15 @@ function App({ onSignOut, sessionEmail }) {
   const setLayout = (v) => { setLayoutPref(v); try { localStorage.setItem("agemda_layout", v); } catch (e) {} };
   const [mobScreen, setMobScreen] = useState(() => { try { return localStorage.getItem("agemda_trip_id") ? "trip" : "home"; } catch (e) { return "home"; } });
   const [showAccount, setShowAccount] = useState(false);
+  const [sideCollapsed, setSideCollapsed] = useState(() => { try { return localStorage.getItem("agemda_side") === "1"; } catch (e) { return false; } });
+  const toggleSide = () => {
+    setSideCollapsed((v) => {
+      const nv = !v;
+      try { localStorage.setItem("agemda_side", nv ? "1" : "0"); } catch (e) {}
+      return nv;
+    });
+    setTimeout(() => window.dispatchEvent(new Event("resize")), 240);
+  };
   const [showSwitcher, setShowSwitcher] = useState(false);
   const [showInboxSheet, setShowInboxSheet] = useState(false);
   const [showMore, setShowMore] = useState(false);
@@ -2473,9 +2492,14 @@ function App({ onSignOut, sessionEmail }) {
   // ================= 電腦版 B =================
   const desktopUI = (
     <div className="ag-app ag-app--side">
-      <aside className="ag-side">
-        <div className="ag-side__logo"><AgLogo /></div>
-        <div className="ag-side__list">
+      <aside className={"ag-side" + (sideCollapsed ? " is-collapsed" : "")}>
+        <div className="ag-side__logo">
+          {sideCollapsed ? <Gem size={26} kind="spot" /> : <AgLogo />}
+          <button className="ag-side__toggle" onClick={toggleSide} title={sideCollapsed ? (lang === "en" ? "Expand sidebar" : "展開側欄") : (lang === "en" ? "Collapse sidebar" : "收合側欄")}>
+            <PanelLeft size={18} />
+          </button>
+        </div>
+        {sideCollapsed ? <div style={{ flex: 1 }} /> : <div className="ag-side__list">
           {upcomingTrips.length > 0 && (
             <div className="ag-side__group">
               <div className="ag-side__label">{T.upcoming}</div>
@@ -2489,7 +2513,7 @@ function App({ onSignOut, sessionEmail }) {
             </div>
           )}
           <button className="ag-side__new" onClick={openNewTrip}><Plus size={14} /> {T.newTrip}</button>
-        </div>
+        </div>}
         <div className="ag-side__acct">
           {showAccount && (
             <React.Fragment>

@@ -1072,6 +1072,10 @@ body { font-family: var(--ag-font-ui); }
 
 /* 貼上文字自動辨識 */
 .qadd { max-width: 440px; margin: 0 auto; padding: 20px 16px; font-family: inherit; color: var(--ag-ink); }
+.qadd__head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.qadd__lang { display: inline-flex; border: 1px solid var(--ag-line); border-radius: 999px; overflow: hidden; }
+.qadd__lang button { border: 0; background: transparent; padding: 4px 10px; font: inherit; font-size: 12px; color: var(--ag-ink-2); cursor: pointer; }
+.qadd__lang button.is-on { background: var(--ag-accent); color: #fff; }
 .qadd h2 { margin: 0 0 6px; font-size: 18px; }
 .qadd__text { margin: 8px 0 14px; padding: 10px 12px; border: 1px solid var(--ag-line); border-radius: 12px; background: var(--ag-surface); font-size: 13px; line-height: 1.5; max-height: 110px; overflow: auto; white-space: pre-wrap; word-break: break-all; color: var(--ag-ink-2); }
 .qadd__trip { display: block; width: 100%; box-sizing: border-box; text-align: left; margin-bottom: 8px; padding: 12px 14px; border: 1px solid var(--ag-line); border-radius: 12px; background: var(--ag-surface); font: inherit; font-size: 15px; color: var(--ag-ink); cursor: pointer; }
@@ -1107,6 +1111,12 @@ const WEEKDAY_ZH = ["日", "一", "二", "三", "四", "五", "六"];
 const WEEKDAY_EN = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 /* ============ 介面文字 ============ */
+const LANG_KEY = "agemda_lang";
+function readStoredLang() {
+  try { const v = localStorage.getItem(LANG_KEY); if (v === "zh" || v === "en") return v; } catch (e) {}
+  return null;
+}
+function saveLang(v) { try { localStorage.setItem(LANG_KEY, v); } catch (e) {} }
 const STRINGS = {
   zh: {
     appTitle: "行程規劃", editDays: "編輯天數", tripDateLabel: "旅遊日期：", backfill: "補齊座標／翻譯",
@@ -1686,7 +1696,8 @@ function App({ onSignOut, sessionEmail }) {
 
   const [showSetup, setShowSetup] = useState(false);
   const [section, setSection] = useState("itinerary");
-  const [lang, setLang] = useState("zh");
+  const [lang, setLangState] = useState(() => readStoredLang() || "zh");
+  const setLang = (v) => { setLangState(v); saveLang(v); };
   const T = STRINGS[lang];
   const [layoutPref, setLayoutPref] = useState(() => { try { return localStorage.getItem("agemda_layout") || "auto"; } catch (e) { return "auto"; } });
   const [winW, setWinW] = useState(window.innerWidth);
@@ -2744,6 +2755,9 @@ function LoginScreen() {
 }
 
 function CaptureAdd({ text }) {
+  const [lang, setLangState] = useState(() => readStoredLang() || (/^zh/i.test(navigator.language || "") ? "zh" : "en"));
+  const setLang = (v) => { setLangState(v); saveLang(v); };
+  const en = lang === "en";
   const [trips, setTrips] = useState(null);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState(null);
@@ -2770,30 +2784,36 @@ function CaptureAdd({ text }) {
       });
       const data = await res.json();
       if (!res.ok || data.error || !data.created_count) {
-        setMsg({ ok: false, text: "沒有加入：" + (data.error || "沒有辨識出地點") });
+        setMsg({ ok: false, text: en ? "Nothing was added: no place was recognized, or the link could not be read." : "沒有加入：" + (data.error || "沒有辨識出地點") });
         setBusy(false);
         return;
       }
-      setMsg({ ok: true, text: "已加入「" + clean(t.name) + "」待排清單：" + (data.names || []).join("、") });
+      setMsg({ ok: true, text: en ? "Added to \"" + clean(t.name) + "\": " + ((data.items || []).map((i) => i.name_en || i.name).join(", ") || (data.names || []).join(", ")) : "已加入「" + clean(t.name) + "」待排清單：" + (data.names || []).join("、") });
       setTimeout(() => { try { window.close(); } catch (e) {} }, 2500);
     } catch (e) {
-      setMsg({ ok: false, text: "發生錯誤：" + String(e) });
+      setMsg({ ok: false, text: (en ? "Error: " : "發生錯誤：") + String(e) });
       setBusy(false);
     }
   };
   return (
     <div className="qadd">
-      <h2>加入 aGemda 待排清單</h2>
+      <div className="qadd__head">
+        <h2>{en ? "Add to aGemda" : "加入 aGemda 待排清單"}</h2>
+        <span className="qadd__lang">
+          <button className={lang === "zh" ? "is-on" : ""} onClick={() => setLang("zh")}>中文</button>
+          <button className={lang === "en" ? "is-on" : ""} onClick={() => setLang("en")}>EN</button>
+        </span>
+      </div>
       <div className="qadd__text">{text.length > 300 ? text.slice(0, 300) + "…" : text}</div>
-      {trips === null && <div>載入旅程中…</div>}
+      {trips === null && <div>{en ? "Loading trips…" : "載入旅程中…"}</div>}
       {trips && trips.map((t) => (
         <button key={t.id} className="qadd__trip" disabled={busy || (msg && msg.ok)} onClick={() => add(t)}>
-          {clean(t.name)}{t.ended ? "（已結束）" : ""}
+          {clean(t.name)}{t.ended ? (en ? " (ended)" : "（已結束）") : ""}
         </button>
       ))}
-      {busy && !msg && <div className="qadd__msg">辨識中…</div>}
+      {busy && !msg && <div className="qadd__msg">{en ? "Finding the place…" : "辨識中…"}</div>}
       {msg && <div className={"qadd__msg " + (msg.ok ? "ok" : "err")}>{msg.text}</div>}
-      <button className="qadd__close" onClick={() => { try { window.close(); } catch (e) {} }}>關閉視窗</button>
+      <button className="qadd__close" onClick={() => { try { window.close(); } catch (e) {} }}>{en ? "Close" : "關閉視窗"}</button>
     </div>
   );
 }

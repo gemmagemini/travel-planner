@@ -413,6 +413,9 @@ a:hover { color: var(--ag-accent-hover); }
 .ag-main { flex: 1; min-width: 0; padding: 0 0 28px 36px; }
 
 /* 右側地圖欄：收合時是細長頁籤，展開時把日期卡片往左推（不浮在畫面上） */
+.ag-mapcol { flex: 0 0 clamp(320px, 34vw, 480px); height: 100vh; box-sizing: border-box; padding: 16px 20px 16px 8px; display: flex; }
+.ag-mapcol .ag-map { height: 100%; }
+.ag-mapcol .ag-map__canvas { min-height: 0; }
 .ag-maprail { flex: 0 0 44px; display: flex; align-items: flex-start; padding-top: 34px; }
 .ag-maprail--open { flex: 0 0 470px; align-items: stretch; padding: 24px 36px 28px 0; }
 .ag-maprail__tab {
@@ -2467,9 +2470,16 @@ function App({ onSignOut, sessionEmail }) {
             </div>
           </div>
 
-          <div className={`ag-maprail ${mapOpen ? "ag-maprail--open" : ""}`}>
-            {mapOpen && (
-              <div className="ag-map">
+          </div>
+        </React.Fragment>
+      )}
+    </React.Fragment>
+  );
+
+  // 右側整欄地圖（固定在視窗右邊，不跟著行程捲動）
+  const mapColumn = (
+    <aside className="ag-mapcol">
+      <div className="ag-map">
                 <div className="ag-map__head">
                   <span className="ag-map__date">{days[mapDayIdx] ? days[mapDayIdx].md : ""}</span>
                   <span className="ag-map__wd">{days[mapDayIdx] ? weekdayLabel(days[mapDayIdx].weekdayIndex, lang) : ""}</span>
@@ -2480,13 +2490,8 @@ function App({ onSignOut, sessionEmail }) {
                   <div ref={mapDivRef} style={{ width: "100%", height: "100%" }}></div>
                 </div>
                 <div className="ag-map__hint">{T.mapHint}</div>
-              </div>
-            )}
-          </div>
-          </div>
-        </React.Fragment>
-      )}
-    </React.Fragment>
+      </div>
+    </aside>
   );
 
   // ================= 電腦版 B =================
@@ -2556,6 +2561,7 @@ function App({ onSignOut, sessionEmail }) {
           {logiShopBlock}
         </div>
       </main>
+      {mapOpen && section === "itinerary" && mapColumn}
     </div>
   );
 

@@ -1071,6 +1071,16 @@ body { font-family: var(--ag-font-ui); }
 .mob-scroll .mobile-wrap { max-width: none; padding: 0; }
 
 /* 貼上文字自動辨識 */
+.qadd { max-width: 440px; margin: 0 auto; padding: 20px 16px; font-family: inherit; color: var(--ag-ink); }
+.qadd h2 { margin: 0 0 6px; font-size: 18px; }
+.qadd__text { margin: 8px 0 14px; padding: 10px 12px; border: 1px solid var(--ag-line); border-radius: 12px; background: var(--ag-surface); font-size: 13px; line-height: 1.5; max-height: 110px; overflow: auto; white-space: pre-wrap; word-break: break-all; color: var(--ag-ink-2); }
+.qadd__trip { display: block; width: 100%; box-sizing: border-box; text-align: left; margin-bottom: 8px; padding: 12px 14px; border: 1px solid var(--ag-line); border-radius: 12px; background: var(--ag-surface); font: inherit; font-size: 15px; color: var(--ag-ink); cursor: pointer; }
+.qadd__trip:hover { border-color: var(--ag-accent); color: var(--ag-accent); }
+.qadd__trip:disabled { opacity: .5; cursor: default; }
+.qadd__msg { margin-top: 12px; font-size: 14px; line-height: 1.5; }
+.qadd__msg.ok { color: var(--ag-accent); }
+.qadd__msg.err { color: #c0392b; }
+.qadd__close { margin-top: 12px; padding: 8px 16px; border: 1px solid var(--ag-line); border-radius: 999px; background: transparent; font: inherit; font-size: 13px; color: var(--ag-ink-2); cursor: pointer; }
 .spaste { margin-top: 8px; }
 .spaste__toggle { display: inline-flex; align-items: center; gap: 6px; background: transparent; border: 1px dashed var(--ag-line-add); border-radius: var(--ag-r-pill); padding: 6px 12px; font: inherit; font-size: 12.5px; color: var(--ag-ink-2); cursor: pointer; }
 .spaste__toggle:hover { border-color: var(--ag-accent); color: var(--ag-accent); }
@@ -2733,6 +2743,61 @@ function LoginScreen() {
   );
 }
 
+function CaptureAdd({ text }) {
+  const [trips, setTrips] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState(null);
+  useEffect(() => {
+    db.from("trips").select("id, name, start_date, end_date").order("start_date", { ascending: true }).then(({ data }) => {
+      const today = new Date(Date.now() + 8 * 3600 * 1000).toISOString().slice(0, 10);
+      const all = data || [];
+      const up = all.filter((t) => t.end_date >= today);
+      const past = all.filter((t) => t.end_date < today).reverse();
+      setTrips([...up, ...past.map((t) => ({ ...t, ended: true }))]);
+    });
+  }, []);
+  const clean = (n) => ((n || "").replace(/^\d{6}-\d{6}_/, "").replace(/\s*[（(]\d{4}[）)]\s*$/, "").trim() || n);
+  const add = async (t) => {
+    setBusy(true);
+    setMsg(null);
+    try {
+      const { data: sd } = await db.auth.getSession();
+      const jwt = sd && sd.session ? sd.session.access_token : null;
+      const res = await fetch(EDGE_FUNCTION_URL, {
+        method: "POST",
+        headers: { apikey: SUPABASE_ANON_KEY, Authorization: "Bearer " + (jwt || SUPABASE_ANON_KEY), "Content-Type": "application/json" },
+        body: JSON.stringify({ text, trip_id: t.id }),
+      });
+      const data = await res.json();
+      if (!res.ok || data.error || !data.created_count) {
+        setMsg({ ok: false, text: "沒有加入：" + (data.error || "沒有辨識出地點") });
+        setBusy(false);
+        return;
+      }
+      setMsg({ ok: true, text: "已加入「" + clean(t.name) + "」待排清單：" + (data.names || []).join("、") });
+      setTimeout(() => { try { window.close(); } catch (e) {} }, 2500);
+    } catch (e) {
+      setMsg({ ok: false, text: "發生錯誤：" + String(e) });
+      setBusy(false);
+    }
+  };
+  return (
+    <div className="qadd">
+      <h2>加入 aGemda 待排清單</h2>
+      <div className="qadd__text">{text.length > 300 ? text.slice(0, 300) + "…" : text}</div>
+      {trips === null && <div>載入旅程中…</div>}
+      {trips && trips.map((t) => (
+        <button key={t.id} className="qadd__trip" disabled={busy || (msg && msg.ok)} onClick={() => add(t)}>
+          {clean(t.name)}{t.ended ? "（已結束）" : ""}
+        </button>
+      ))}
+      {busy && !msg && <div className="qadd__msg">辨識中…</div>}
+      {msg && <div className={"qadd__msg " + (msg.ok ? "ok" : "err")}>{msg.text}</div>}
+      <button className="qadd__close" onClick={() => { try { window.close(); } catch (e) {} }}>關閉視窗</button>
+    </div>
+  );
+}
+
 function Root() {
   const [session, setSession] = useState(undefined);
   useEffect(() => {
@@ -2743,6 +2808,8 @@ function Root() {
 
   if (session === undefined) return <div className="loading-screen">載入中…</div>;
   if (!session) return <LoginScreen />;
+  const quickText = (new URLSearchParams(window.location.search).get("add") || "").trim();
+  if (quickText) return <CaptureAdd text={quickText} />;
   // key 綁 user id：登出再換別人登入時，整個 App 重新載入
   return <App key={session.user.id} sessionEmail={session.user.email} onSignOut={() => db.auth.signOut()} />;
 }
